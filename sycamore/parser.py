@@ -1,13 +1,13 @@
 from sly import Parser
-from .lexer import *
+import sycamore.lexer as lexer
 
 class SycamoreParser(Parser):
-    tokens = sycamoreLexer.tokens
+    tokens = lexer.sycamoreLexer.tokens
 
     def __init__(self):
         self.env = {}
         
-    @_('expr PLUS term')
+    @_('expr PLUS term EOS')
     def expr(self, p):
         return p.expr + p.term
 
@@ -15,15 +15,15 @@ class SycamoreParser(Parser):
     def statement(self, p):
         return p.var_assign
 
-    @_('IDENTIFER VAR_ASSIGN STRING')
+    @_('IDENTIFER VAR_ASSIGN STRING EOS')
     def var_assign(self, p):
         return ('var_assign', p.IDENTIFIER, p.STRING)
 
-    @_('IDENTIFER VAR_ASSIGN expr')
+    @_('IDENTIFER VAR_ASSIGN expr EOS')
     def var_assign(self, p):
         return ('var_assign', p.IDENTIFIER, p.expr)
     
-lexer = sycamoreLexer()
+lexer = lexer.sycamoreLexer()
 data = 'let x = 9;'
 thing = lexer.tokenize(data)
 parser = SycamoreParser()
