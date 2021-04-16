@@ -1,12 +1,13 @@
 from sly import Parser
-import sycamore.lexer as lexer
+from . import lexer
+
 
 class SycamoreParser(Parser):
     tokens = lexer.sycamoreLexer.tokens
 
     def __init__(self):
         self.env = {}
-        
+
     @_('expr PLUS term EOS')
     def expr(self, p):
         return p.expr + p.term
@@ -22,7 +23,8 @@ class SycamoreParser(Parser):
     @_('IDENTIFER VAR_ASSIGN expr EOS')
     def var_assign(self, p):
         return ('var_assign', p.IDENTIFIER, p.expr)
-    
+
+
 lexer = lexer.sycamoreLexer()
 data = 'let x = 9;'
 thing = lexer.tokenize(data)

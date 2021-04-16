@@ -1,9 +1,43 @@
 import sly
 import sys
 
+
 class sycamoreLexer(sly.Lexer):
-    tokens = {AND, OR, EQ, NE, GE, GT, LE, LT, EOS, COLON, PLUS, MULTIPLY, DIVIDE, SUBTRACT, MODULUS, PAREN_OPEN, PAREN_CLOSE, BRACKET_OPEN, BRACKET_CLOSE,
-              VAR_ASSIGN, IDENTIFIER, DOUBLE_QUOTE_STRING, SINGLE_QUOTE_STRING, CONST, RETURN, BREAK, IMPORT, SCOPE, IF, ELSE, FUNCTION, ELSE_IF, CONTINUE}
+    tokens = {
+        AND,
+        OR,
+        EQ,
+        NE,
+        GE,
+        GT,
+        LE,
+        LT,
+        EOS,
+        COLON,
+        PLUS,
+        MULTIPLY,
+        DIVIDE,
+        SUBTRACT,
+        MODULUS,
+        PAREN_OPEN,
+        PAREN_CLOSE,
+        BRACKET_OPEN,
+        BRACKET_CLOSE,
+        VAR_ASSIGN,
+        IDENTIFIER,
+        DOUBLE_QUOTE_STRING,
+        SINGLE_QUOTE_STRING,
+        CONST,
+        RETURN,
+        BREAK,
+        IMPORT,
+        SCOPE,
+        IF,
+        ELSE,
+        FUNCTION,
+        ELSE_IF,
+        CONTINUE,
+    }
 
     AND = r'&&'
     OR = r'\|\|'
@@ -49,12 +83,10 @@ class sycamoreLexer(sly.Lexer):
     IDENTIFIER['return'] = RETURN
     IDENTIFIER['break'] = BREAK
     IDENTIFIER['continue'] = CONTINUE
-    DOUBLE_QUOTE_STRING = r"\"(?s:[^\"\\\\]|\\\\.)*\""
+    DOUBLE_QUOTE_STRING = r'\"(?s:[^\"\\\\]|\\\\.)*\"'
     SINGLE_QUOTE_STRING = r"'(?s:[^'\\\\]|\\\\.)*'"
 
-    
-
-    @ _(r'\n+')
+    @_(r'\n+')
     def ignore_newline(self, t):
         self.lineno += len(t.value)
 
@@ -63,8 +95,9 @@ class sycamoreLexer(sly.Lexer):
     ignore_comments = r'\#.*'
 
     def error(self, t):
-        print(F'ERROR at line {self.lineno}: Illegal Character {t.value[0]!r}')
+        print(f'ERROR at line {self.lineno}: Illegal Character {t.value[0]!r}')
         sys.exit(1)
+
 
 lexer = sycamoreLexer()
 
@@ -75,4 +108,3 @@ print("Hello World!");
 
 for thing in lexer.tokenize(data):
     print(thing)
-
