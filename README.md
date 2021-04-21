@@ -1,2 +1,2 @@
 # sycamore
-A simple, static, fast language that is being developed constantly
+A simple, gradually typed, fast language that is being developed constantly
