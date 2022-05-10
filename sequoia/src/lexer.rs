@@ -115,13 +115,13 @@ pub enum Token {
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
     Str,
 
-    #[regex("-?[0-9]+", |lex| lex.slice().parse())]
+    #[regex("[+-]?([1-9][0-9]*)|0", |lex| lex.slice().parse())]
     Integer(i64),
 
     #[regex("-?[0-9]+\\.[0-9]+", |lex| lex.slice().parse())]
     Float(f64),
 
-    #[regex(r"[a-zA-Z0-9_]+", priority=2)]
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", priority=2)]
     Name,
 
     #[error]
