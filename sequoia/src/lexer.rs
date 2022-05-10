@@ -1,53 +1,131 @@
 use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
-enum Token {
-	// Conditionals
-	#[token("&&")]
-	And,
+pub enum Token {
+    // Conditionals
+    #[token("&&")]
+    And,
 
-	#[token("||")]
-	Or,
+    #[token("||")]
+    Or,
 
-	//Equality
-	#[token("==")]
-	Equal,
+    //Equality
+    #[token("==")]
+    Equal,
 
-	#[token("!=")]
-	NotEqual,
+    #[token("!=")]
+    NotEqual,
 
-	#[token(">=")]
-	GreaterOrEqual,
+    #[token(">=")]
+    GreaterOrEqual,
 
-	#[token(">")]
-	GreaterThan,
+    #[token(">")]
+    GreaterThan,
 
-	#[token("<=")]
-	LessOrEqual,
+    #[token("<=")]
+    LessOrEqual,
 
-	//EOL chars
-	#[token(";")]
-	Semicolon,
+    //EOL chars
+    #[token(";")]
+    Semicolon,
 
-	#[token(":")]
-	Colon,
+    #[token(":")]
+    Colon,
 
+    //Arithmetic operators
+    #[token("+")]
+    Plus,
 
+    #[token("*")]
+    Multiply,
 
-	//Arithmetic operators
-	#[token("+")]
-	Plus,
+    #[token("/")]
+    Divide,
 
-	#[token("*")]
-	Multiply,
+    #[token("-")]
+    Subtract,
 
-	#[token("/")]
-	Divide,
+    #[token("%")]
+    Modulus,
 
-	#[token("-")]
-	Subtract,
+    //Parentheses and Brackets
+    #[token("(")]
+    ParenOpen,
 
-	#[token("%")]
-	Modulus,
+    #[token(")")]
+    ParenClose,
 
+    #[token("[")]
+    BracketOpen,
+
+    #[token("]")]
+    BracketClose,
+
+    #[token("{")]
+    BraceOpen,
+
+    #[token("}")]
+    BraceClose,
+
+    //Var Assign
+    #[token("=")]
+    VarAssign,
+
+    //Keywords
+    #[token("if")]
+    If,
+
+    #[token("else")]
+    Else,
+
+    #[token("elsif")]
+    ElseIf,
+
+    #[token("let")]
+    #[token("var")]
+    Scope,
+
+    #[token("const")]
+    Const,
+
+    #[token("def")]
+    #[token("fun")]
+    Function,
+
+    #[token("import")]
+    #[token("use")]
+    Import,
+
+    #[token("from")]
+    From,
+
+    #[token("::")]
+    ModuleSeparator,
+
+    #[token("return")]
+    Return,
+
+    #[token("Break")]
+    Break,
+
+    #[token("continue")]
+    Continue,
+
+    //Basic types
+    #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
+    Str,
+
+    #[regex("-?[0-9]+", |lex| lex.slice().parse())]
+    Integer(i64),
+
+    #[regex("-?[0-9]+\\.[0-9]+", |lex| lex.slice().parse())]
+    Float(f64),
+
+    #[regex(r"[a-zA-Z0-9_]+", priority=2)]
+    Name,
+
+    #[error]
+    #[regex(r"//.*", logos::skip)]
+    #[regex(r"[ \t\n\f]+", logos::skip)]
+    Error,
 }
