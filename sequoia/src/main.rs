@@ -15,4 +15,5 @@ fn main() {
     let mut lex = Token::lexer(&str);
     let thing: Vec<Token> = lex.collect();
     println!("The tokens are {:?}", thing);
+    println!("Ran lexer succesfully")
 }
