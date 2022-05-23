@@ -1,8 +1,9 @@
 use logos::Logos;
 
 use crate::lexer::Token;
-
+use crate::parser::parse;
 mod lexer;
+mod parser;
 fn main() {
     let str = String::from(
         r#"
@@ -12,8 +13,7 @@ fn main() {
         }
         "#,
     );
-    let mut lex = Token::lexer(&str);
-    let thing: Vec<Token> = lex.collect();
-    println!("The tokens are {:?}", thing);
-    println!("Ran lexer succesfully")
+    let lex: Vec<_> = Token::lexer(&str).spanned().collect();
+    println!("Ran lexer succesfully");
+    parse(lex)
 }
