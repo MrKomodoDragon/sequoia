@@ -1,7 +1,7 @@
 use logos::Logos;
 
-#[derive(Logos, Debug, PartialEq)]
-pub enum Token {
+#[derive(Logos, Debug, PartialEq, Clone, Eq, Hash)]
+pub enum Token<'a> {
     // Conditionals
     #[token("&&")]
     And,
@@ -115,11 +115,11 @@ pub enum Token {
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
     Str,
 
-    #[regex("[+-]?([1-9][0-9]*)|0", |lex| lex.slice().parse())]
-    Integer(i64),
+    #[regex("[+-]?([1-9][0-9]*)|0")]
+    Integer(&'a str),
 
-    #[regex("-?[0-9]+\\.[0-9]+", |lex| lex.slice().parse())]
-    Float(f64),
+    #[regex("-?[0-9]+\\.[0-9]+")]
+    Float,
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", priority = 2)]
     Name,
