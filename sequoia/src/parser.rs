@@ -90,7 +90,6 @@ impl Literal {
 impl Expr {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         recursive(|expr| {
-            let mut final_parser = (); //just to shut rust up about variable not found
             let atom = Literal::parser(expr.clone()).map(Expr::Literal).boxed();
             let unary = UnaryOperator::parser()
                 .repeated()
