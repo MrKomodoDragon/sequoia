@@ -11,7 +11,7 @@ pub enum Token<'a> {
 
     //Equality
     #[token("==")]
-    Equal,
+    IsEqual,
 
     #[token("!=")]
     NotEqual,
@@ -48,6 +48,9 @@ pub enum Token<'a> {
     #[token("%")]
     Modulus,
 
+    #[token("=")]
+    Equal,
+
     //Parentheses and Brackets
     #[token("(")]
     ParenOpen,
@@ -67,10 +70,6 @@ pub enum Token<'a> {
     #[token("}")]
     BraceClose,
 
-    //Var Assign
-    #[token("=")]
-    VarAssign,
-
     //Keywords
     #[token("if")]
     If,
@@ -82,8 +81,7 @@ pub enum Token<'a> {
     ElseIf,
 
     #[token("let")]
-    #[token("var")]
-    Scope,
+    Let,
 
     #[token("const")]
     Const,
@@ -100,7 +98,7 @@ pub enum Token<'a> {
     From,
 
     #[token("::")]
-    ModuleSeparator,
+    DoubleColon,
 
     #[token("return")]
     Return,
@@ -115,14 +113,19 @@ pub enum Token<'a> {
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
     Str,
 
-    #[regex("[+-]?([1-9][0-9]*)|0")]
+    #[regex("([1-9][0-9]*)|0")]
     Integer(&'a str),
 
-    #[regex("-?[0-9]+\\.[0-9]+")]
+    #[regex("[0-9]+\\.[0-9]+")]
     Float,
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", priority = 2)]
-    Name,
+    Ident(&'a str),
+
+    #[token("Str")]
+    #[token("Int")]
+    #[token("Float")]
+    Type(&'a str),
 
     #[error]
     #[regex(r"//.*", logos::skip)]
