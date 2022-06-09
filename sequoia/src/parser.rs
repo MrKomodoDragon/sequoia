@@ -115,6 +115,7 @@ impl IdentAst {
 impl Kind {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         Kind::union_parser()
+            .or(Kind::optional_parser())
             .or(Kind::list_parser())
             .or(Kind::basic_parser())
     }
@@ -132,7 +133,8 @@ impl Kind {
             .map(|kind| Kind::List(Box::new(kind)))
     }
     pub fn union_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        Kind::list_parser()
+        Kind::optional_parser()
+            .or(Kind::list_parser())
             .or(Kind::basic_parser())
             .separated_by(just(Token::Union))
             .map(|kinds| {
@@ -144,6 +146,14 @@ impl Kind {
                         .collect(),
                 )
             })
+    }
+
+    pub fn optional_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>>
+    {
+        Kind::list_parser()
+            .or(Kind::basic_parser())
+            .then_ignore(just(Token::Optional))
+            .map(|kind| Kind::Optional(Box::new(kind)))
     }
 }
 
