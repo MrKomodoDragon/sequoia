@@ -1,15 +1,17 @@
 #![allow(dead_code)]
 use crate::{ast::*, lexer::Token};
+use chumsky::combinator::To;
 use chumsky::Stream;
 use chumsky::{error::Simple, prelude::*};
 use std::str::FromStr;
 
 pub fn parse(
     tokens: Vec<(Token, std::ops::Range<usize>)>,
-) -> Result<Root, Vec<chumsky::error::Simple<Token>>> {
+) -> Result</*Root*/ Kind, Vec<chumsky::error::Simple<Token>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    Root::parser().parse(stream)
+    //Root::parser().parse(stream)
+    Kind::parser().parse(stream)
 }
 
 impl BinaryOperator {
@@ -117,20 +119,11 @@ impl Kind {
             .or(Kind::basic_parser())
     }
     pub fn basic_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        filter_map(|span, token| match token {
-            Token::Type("String") => Ok(Kind::Str),
-            Token::Type("Int") => Ok(Kind::Int),
-            Token::Type("Float") => Ok(Kind::Float),
-            _ => Err(Simple::expected_input_found(
-                span,
-                [
-                    Some(Token::Type("String")),
-                    Some(Token::Type("Int")),
-                    Some(Token::Type("Float")),
-                ],
-                Some(token),
-            )),
-        })
+        select! {
+            Token::Type("Str") => Kind::Str,
+            Token::Type("Int") => Kind::Int,
+            Token::Type("Float") => Kind::Float,
+        }
     }
 
     pub fn list_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -139,10 +132,9 @@ impl Kind {
             .map(|kind| Kind::List(Box::new(kind)))
     }
     pub fn union_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        Kind::basic_parser()
-            .then_ignore(just(Token::Union))
-            .repeated()
-            .then_ignore(one_of([Token::Equal, Token::Comma, Token::BraceOpen]))
+        Kind::list_parser()
+            .or(Kind::basic_parser())
+            .separated_by(just(Token::Union))
             .map(|kinds| {
                 Kind::Union(
                     kinds
