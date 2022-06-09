@@ -3,10 +3,11 @@ use logos::Logos;
 
 use crate::lexer::Token;
 use crate::parser::parse;
+mod ast;
 mod lexer;
 mod parser;
 fn main() {
-    let str = String::from(r#"let x: Int = 1+1;"#);
+    let str = String::from(r#"let x: Int|Int = 5;"#);
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);

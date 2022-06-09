@@ -1,65 +1,9 @@
 #![allow(dead_code)]
-use crate::lexer::Token;
-use chumsky::prelude::*;
+use crate::{ast::*, lexer::Token};
 use chumsky::Stream;
+use chumsky::{error::Simple, prelude::*};
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
-pub struct Ident(String);
-
-#[derive(Debug, Clone)]
-pub struct Let {
-    name: Ident,
-    kind: Kind, //if you're wondering why it's not named something with the word type in it, blame sampersand.
-    rhs: Expr,
-}
-#[derive(Clone, Debug)]
-pub enum Literal {
-    Integer(i64),
-    Str(String),
-    Float(f64),
-}
-
-#[derive(Debug, Clone)]
-pub enum Kind {
-    Int,
-    Float,
-    Str,
-    List(Box<Kind>),
-    Union(Box<Kind>),
-    Optional(Box<Kind>),
-}
-#[derive(Clone, Debug)]
-pub enum BinaryOperator {
-    Add,
-    Neg,
-    Sub,
-    Mul,
-    Div,
-}
-#[derive(Clone, Debug)]
-pub enum UnaryOperator {
-    Neg,
-}
-#[derive(Clone, Debug)]
-pub enum Expr {
-    Literal(Literal),
-    BinaryOperator(Box<Expr>, BinaryOperator, Box<Expr>),
-    UnaryOperator(UnaryOperator, Box<Expr>),
-}
-#[derive(Debug, Clone)]
-enum Statement {
-    Let(Let),
-}
-
-#[derive(Debug, Clone)]
-pub struct Root {
-    statements: Vec<Statement>,
-}
-//As the name suggests, this is a TEST.
-enum Test {
-    Exprs(Vec<Expr>),
-}
 pub fn parse(
     tokens: Vec<(Token, std::ops::Range<usize>)>,
 ) -> Result<Root, Vec<chumsky::error::Simple<Token>>> {
@@ -92,6 +36,7 @@ impl Literal {
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         filter_map(|span, token| match token {
             Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
+            Token::Float(float) => Ok(Literal::Float(f64::from_str(float).unwrap())),
             _ => Err(Simple::expected_input_found(
                 span,
                 [Some(Token::Integer("..."))],
@@ -133,7 +78,7 @@ impl Let {
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>>,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Let)
-            .ignore_then(Ident::parser())
+            .ignore_then(IdentAst::parser())
             .then_ignore(just(Token::Colon))
             .then(Kind::parser())
             .then_ignore(just(Token::Equal))
@@ -147,11 +92,13 @@ impl Let {
     }
 }
 
-impl Ident {
+impl IdentAst {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         filter_map(|span, token| {
             if let Token::Ident(ident) = token {
-                Ok(Ident(ident.to_string()))
+                Ok(IdentAst {
+                    name: ident.to_string(),
+                })
             } else {
                 Err(Simple::expected_input_found(
                     span,
@@ -165,6 +112,11 @@ impl Ident {
 
 impl Kind {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        Kind::union_parser()
+            .or(Kind::list_parser())
+            .or(Kind::basic_parser())
+    }
+    pub fn basic_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         filter_map(|span, token| match token {
             Token::Type("String") => Ok(Kind::Str),
             Token::Type("Int") => Ok(Kind::Int),
@@ -179,6 +131,27 @@ impl Kind {
                 Some(token),
             )),
         })
+    }
+
+    pub fn list_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        Kind::basic_parser()
+            .then_ignore(just([Token::BracketOpen, Token::BracketClose]))
+            .map(|kind| Kind::List(Box::new(kind)))
+    }
+    pub fn union_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        Kind::basic_parser()
+            .then_ignore(just(Token::Union))
+            .repeated()
+            .then_ignore(one_of([Token::Equal, Token::Comma, Token::BraceOpen]))
+            .map(|kinds| {
+                Kind::Union(
+                    kinds
+                        .clone()
+                        .iter()
+                        .map(|kind| Box::new(kind.clone()))
+                        .collect(),
+                )
+            })
     }
 }
 
@@ -196,5 +169,14 @@ impl Root {
             .repeated()
             .then_ignore(end())
             .map(|stmts| Root { statements: stmts })
+    }
+}
+
+impl Arg {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        IdentAst::parser()
+            .then_ignore(just(Token::Colon))
+            .then(Kind::parser())
+            .map(|(ident, kind)| Arg { name: ident, kind })
     }
 }

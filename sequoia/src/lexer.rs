@@ -9,6 +9,16 @@ pub enum Token<'a> {
     #[token("||")]
     Or,
 
+    //Type related operators
+    #[token("|")]
+    Union,
+
+    #[token("?")]
+    Optional,
+
+    #[token(",")]
+    Comma,
+
     //Equality
     #[token("==")]
     IsEqual,
@@ -117,7 +127,7 @@ pub enum Token<'a> {
     Integer(&'a str),
 
     #[regex("[0-9]+\\.[0-9]+")]
-    Float,
+    Float(&'a str),
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", priority = 2)]
     Ident(&'a str),
