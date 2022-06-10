@@ -7,9 +7,11 @@ pub struct Arg {
     pub name: IdentAst,
     pub kind: Kind,
 }
+#[derive(Clone, Debug)]
 pub struct FunctionDecl {
     pub name: IdentAst,
     pub args: Vec<Arg>,
+    pub return_kind: Kind,
     pub statements: Vec<Statement>,
 }
 
@@ -56,6 +58,7 @@ pub enum Expr {
 #[derive(Debug, Clone)]
 pub enum Statement {
     Let(Let),
+    FnDecl(FunctionDecl),
 }
 
 #[derive(Debug, Clone)]

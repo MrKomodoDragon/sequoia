@@ -7,11 +7,10 @@ use std::str::FromStr;
 
 pub fn parse(
     tokens: Vec<(Token, std::ops::Range<usize>)>,
-) -> Result</*Root*/ Kind, Vec<chumsky::error::Simple<Token>>> {
+) -> (Option<Root>, Vec<chumsky::error::Simple<Token>>) {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    //Root::parser().parse(stream)
-    Kind::parser().parse(stream)
+    Root::parser().parse_recovery_verbose(stream)
 }
 
 impl BinaryOperator {
@@ -159,9 +158,13 @@ impl Kind {
 
 impl Statement {
     pub fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
+        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone + 'a,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        Let::parser(expr.clone()).map(Statement::Let)
+        recursive(|stmt| {
+            FunctionDecl::parser(stmt.clone())
+                .map(Statement::FnDecl)
+                .or(Let::parser(expr.clone()).map(Statement::Let))
+        })
     }
 }
 
@@ -180,5 +183,31 @@ impl Arg {
             .then_ignore(just(Token::Colon))
             .then(Kind::parser())
             .map(|(ident, kind)| Arg { name: ident, kind })
+    }
+}
+
+impl FunctionDecl {
+    pub fn parser<'a>(
+        stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,
+    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Function)
+            .ignore_then(IdentAst::parser())
+            .then_ignore(just(Token::ParenOpen))
+            .then(Arg::parser().separated_by(just(Token::Comma)))
+            .then_ignore(just([
+                Token::ParenClose,
+                Token::Subtract,
+                Token::GreaterThan,
+            ]))
+            .then(Kind::parser())
+            .then_ignore(just(Token::BraceOpen))
+            .then(stmt.repeated())
+            .then_ignore(just(Token::BraceClose))
+            .map(|(((name, args), r_kind), stmts)| FunctionDecl {
+                name,
+                args,
+                return_kind: r_kind,
+                statements: stmts,
+            })
     }
 }

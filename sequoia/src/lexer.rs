@@ -96,8 +96,7 @@ pub enum Token<'a> {
     #[token("const")]
     Const,
 
-    #[token("def")]
-    #[token("fun")]
+    #[token("fn")]
     Function,
 
     #[token("import")]

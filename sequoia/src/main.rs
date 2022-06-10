@@ -7,7 +7,11 @@ mod ast;
 mod lexer;
 mod parser;
 fn main() {
-    let str = String::from(r#"Int[]?|Str"#);
+    let str = String::from(
+        r#"fn sex(jay: Str, bomb: Int) -> Int { 
+        let bomb: Int = 8;
+        }"#,
+    );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);
