@@ -8,9 +8,9 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#"fn sex(jay: Str, bomb: Int) -> Int { 
-        let bomb: Int = 8;
-        }"#,
+        r#"fn bomb_is_sus(sus: Int) -> Int {
+            return sus
+    }"#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");

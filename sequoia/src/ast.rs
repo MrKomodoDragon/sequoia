@@ -2,6 +2,10 @@
 pub struct IdentAst {
     pub name: String,
 }
+#[derive(Debug, Clone)]
+pub struct Return {
+    pub expr: Expr,
+}
 #[derive(Clone, Debug)]
 pub struct Arg {
     pub name: IdentAst,
@@ -34,6 +38,7 @@ pub enum Kind {
     Int,
     Float,
     Str,
+    Bool,
     List(Box<Kind>),
     Union(Vec<Box<Kind>>),
     Optional(Box<Kind>),
@@ -54,11 +59,13 @@ pub enum Expr {
     Literal(Literal),
     BinaryOperator(Box<Expr>, BinaryOperator, Box<Expr>),
     UnaryOperator(UnaryOperator, Box<Expr>),
+    Ident(IdentAst),
 }
 #[derive(Debug, Clone)]
 pub enum Statement {
     Let(Let),
     FnDecl(FunctionDecl),
+    Return(Return),
 }
 
 #[derive(Debug, Clone)]

@@ -1,18 +1,24 @@
 #![allow(dead_code)]
 use crate::{ast::*, lexer::Token};
-use chumsky::combinator::To;
 use chumsky::Stream;
 use chumsky::{error::Simple, prelude::*};
 use std::str::FromStr;
 
-pub fn parse(
-    tokens: Vec<(Token, std::ops::Range<usize>)>,
-) -> (Option<Root>, Vec<chumsky::error::Simple<Token>>) {
+pub fn parse<'a>(
+    tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
+) -> Result<Root, Vec<Simple<Token<'a>>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    Root::parser().parse_recovery_verbose(stream)
+    Root::parser().parse(stream)
 }
 
+impl Return {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Return)
+            .ignore_then(Expr::parser())
+            .map(|expr| Return { expr })
+    }
+}
 impl BinaryOperator {
     pub fn mul_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Multiply)
@@ -38,6 +44,7 @@ impl Literal {
         filter_map(|span, token| match token {
             Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
             Token::Float(float) => Ok(Literal::Float(f64::from_str(float).unwrap())),
+            Token::Str(string) => Ok(Literal::Str(String::from(string))),
             _ => Err(Simple::expected_input_found(
                 span,
                 [Some(Token::Integer("..."))],
@@ -50,7 +57,10 @@ impl Literal {
 impl Expr {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> + Clone {
         recursive(|expr| {
-            let atom = Literal::parser(expr.clone()).map(Expr::Literal).boxed();
+            let atom = Literal::parser(expr.clone())
+                .map(Expr::Literal)
+                .boxed()
+                .or(IdentAst::parser().map(Expr::Ident).boxed());
             let unary = UnaryOperator::parser()
                 .repeated()
                 .then(atom)
@@ -123,6 +133,7 @@ impl Kind {
             Token::Type("Str") => Kind::Str,
             Token::Type("Int") => Kind::Int,
             Token::Type("Float") => Kind::Float,
+            Token::Type("Bool") => Kind::Bool,
         }
     }
 
@@ -136,6 +147,7 @@ impl Kind {
             .or(Kind::list_parser())
             .or(Kind::basic_parser())
             .separated_by(just(Token::Union))
+            .at_least(2)
             .map(|kinds| {
                 Kind::Union(
                     kinds
@@ -164,6 +176,7 @@ impl Statement {
             FunctionDecl::parser(stmt.clone())
                 .map(Statement::FnDecl)
                 .or(Let::parser(expr.clone()).map(Statement::Let))
+                .or(Return::parser().map(Statement::Return))
         })
     }
 }

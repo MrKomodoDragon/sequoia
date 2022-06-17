@@ -1,5 +1,4 @@
 use logos::Logos;
-
 #[derive(Logos, Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Token<'a> {
     // Conditionals
@@ -120,7 +119,7 @@ pub enum Token<'a> {
 
     //Basic types
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
-    Str,
+    Str(&'a str),
 
     #[regex("([1-9][0-9]*)|0")]
     Integer(&'a str),
@@ -134,6 +133,7 @@ pub enum Token<'a> {
     #[token("Str")]
     #[token("Int")]
     #[token("Float")]
+    #[token("Bool")]
     Type(&'a str),
 
     #[error]
