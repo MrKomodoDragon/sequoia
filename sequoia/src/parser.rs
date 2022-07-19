@@ -177,6 +177,7 @@ impl Statement {
                 .map(Statement::FnDecl)
                 .or(Let::parser(expr.clone()).map(Statement::Let))
                 .or(Return::parser().map(Statement::Return))
+                .or(FnCall::parser().map(Statement::FnCall))
         })
     }
 }
@@ -222,5 +223,15 @@ impl FunctionDecl {
                 return_kind: r_kind,
                 statements: stmts,
             })
+    }
+}
+
+impl FnCall {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        IdentAst::parser()
+            .then_ignore(just(Token::ParenOpen))
+            .then(Expr::parser().separated_by(just(Token::Comma)))
+            .then_ignore(just(Token::ParenClose))
+            .map(|(name, args)| FnCall { name, args })
     }
 }

@@ -10,6 +10,7 @@ fn main() {
     let str = String::from(
         r#"fn bomb_is_sus(sus: Int) -> Int {
             return sus
+            bomb_is_sus(9)
     }"#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();

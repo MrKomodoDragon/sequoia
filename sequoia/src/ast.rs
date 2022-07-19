@@ -66,9 +66,16 @@ pub enum Statement {
     Let(Let),
     FnDecl(FunctionDecl),
     Return(Return),
+    FnCall(FnCall)
 }
 
 #[derive(Debug, Clone)]
 pub struct Root {
     pub statements: Vec<Statement>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FnCall {
+    pub name: IdentAst,
+    pub args: Vec<Expr>,
 }
