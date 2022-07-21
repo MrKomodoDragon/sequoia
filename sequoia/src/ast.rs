@@ -51,6 +51,13 @@ pub enum BinaryOperator {
     Div,
 }
 #[derive(Clone, Debug)]
+pub enum ComparisonOperators {
+    GreaterThan,
+    LessThan,
+    GreaterOrEqualTo,
+    LessThanOrEqualTo,
+}
+#[derive(Clone, Debug)]
 pub enum UnaryOperator {
     Neg,
 }
@@ -59,6 +66,7 @@ pub enum Expr {
     Literal(Literal),
     BinaryOperator(Box<Expr>, BinaryOperator, Box<Expr>),
     UnaryOperator(UnaryOperator, Box<Expr>),
+    ComparisonOperators(Box<Expr>, ComparisonOperators, Box<Expr>),
     Ident(IdentAst),
 }
 #[derive(Debug, Clone)]

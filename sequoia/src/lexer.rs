@@ -31,6 +31,9 @@ pub enum Token<'a> {
     #[token(">")]
     GreaterThan,
 
+    #[token("<")]
+    LessThan,
+
     #[token("<=")]
     LessOrEqual,
 

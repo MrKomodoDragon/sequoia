@@ -15,7 +15,7 @@ pub fn parse<'a>(
 impl Return {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Return)
-            .ignore_then(Expr::parser())
+            .ignore_then(Expr::parser()).then_ignore(just(Token::Semicolon))
             .map(|expr| Return { expr })
     }
 }
@@ -32,6 +32,16 @@ impl BinaryOperator {
     }
 }
 
+impl ComparisonOperators {
+    fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::GreaterThan)
+            .to(ComparisonOperators::GreaterThan)
+            .or(just(Token::LessThan).to(ComparisonOperators::LessThan))
+            .or(just(Token::GreaterOrEqual).to(ComparisonOperators::GreaterOrEqualTo))
+            .or(just(Token::LessOrEqual).to(ComparisonOperators::LessThanOrEqualTo))
+    }
+}
+
 impl UnaryOperator {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Subtract).to(UnaryOperator::Neg)
@@ -39,7 +49,7 @@ impl UnaryOperator {
 }
 impl Literal {
     fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>>,
+        
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         filter_map(|span, token| match token {
             Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
@@ -56,8 +66,8 @@ impl Literal {
 
 impl Expr {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> + Clone {
-        recursive(|expr| {
-            let atom = Literal::parser(expr.clone())
+        recursive(|_expr| {
+            let atom = Literal::parser()
                 .map(Expr::Literal)
                 .boxed()
                 .or(IdentAst::parser().map(Expr::Ident).boxed());
@@ -67,18 +77,22 @@ impl Expr {
                 .foldr(|op, expr| Expr::UnaryOperator(op, Box::new(expr)));
             let bin_parsers = [
                 BinaryOperator::mul_parser().boxed(),
-                BinaryOperator::add_parser().boxed(),
+            BinaryOperator::add_parser().boxed(),
             ];
             let mut binary = unary.boxed();
             for parser in bin_parsers {
                 binary = binary
                     .clone()
                     .then(parser.then(binary).repeated())
-                    .foldl(|left, (op, right)| {
-                        Expr::BinaryOperator(Box::new(left), op, Box::new(right))
-                    })
+                    .foldl(|left, (op, right)| {Expr::BinaryOperator(Box::new(left), op, Box::new(right))})
                     .boxed();
             }
+            binary = binary
+                .clone()
+                .then(ComparisonOperators::parser().then(binary).repeated())
+                .foldl(|left, (op, right)| {
+                    Expr::ComparisonOperators(Box::new(left), op, Box::new(right))
+                }).boxed();
             binary
         })
     }
@@ -231,7 +245,7 @@ impl FnCall {
         IdentAst::parser()
             .then_ignore(just(Token::ParenOpen))
             .then(Expr::parser().separated_by(just(Token::Comma)))
-            .then_ignore(just(Token::ParenClose))
+            .then_ignore(just(Token::ParenClose)).then_ignore(just(Token::Semicolon))
             .map(|(name, args)| FnCall { name, args })
     }
 }
