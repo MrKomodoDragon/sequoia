@@ -31,6 +31,9 @@ pub enum Literal {
     Integer(i64),
     Str(String),
     Float(f64),
+    List(Vec<Expr>),
+    Tuple(Vec<Expr>),
+    Bool(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +71,7 @@ pub enum Expr {
     UnaryOperator(UnaryOperator, Box<Expr>),
     ComparisonOperators(Box<Expr>, ComparisonOperators, Box<Expr>),
     Ident(IdentAst),
+    
 }
 #[derive(Debug, Clone)]
 pub enum Statement {

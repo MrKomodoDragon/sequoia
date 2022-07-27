@@ -133,6 +133,10 @@ pub enum Token<'a> {
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", priority = 2)]
     Ident(&'a str),
 
+    #[token("true")]
+    #[token("false")]
+    Boolean(&'a str),
+
     #[token("Str")]
     #[token("Int")]
     #[token("Float")]

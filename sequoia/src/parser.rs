@@ -15,7 +15,8 @@ pub fn parse<'a>(
 impl Return {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Return)
-            .ignore_then(Expr::parser()).then_ignore(just(Token::Semicolon))
+            .ignore_then(Expr::parser())
+            .then_ignore(just(Token::Semicolon))
             .map(|expr| Return { expr })
     }
 }
@@ -49,25 +50,36 @@ impl UnaryOperator {
 }
 impl Literal {
     fn parser<'a>(
-        
+        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         filter_map(|span, token| match token {
             Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
             Token::Float(float) => Ok(Literal::Float(f64::from_str(float).unwrap())),
             Token::Str(string) => Ok(Literal::Str(String::from(string))),
+            Token::Boolean(bool) => Ok(Literal::Bool(bool::from_str(bool).unwrap())),
             _ => Err(Simple::expected_input_found(
                 span,
-                [Some(Token::Integer("..."))],
+                [Some(Token::Integer("...")), Some(Token::Float("...")), Some(Token::Str("...")), Some(Token::Boolean("..."))],
                 Some(token),
             )),
         })
+        .or(expr
+            .clone()
+            .separated_by(just(Token::Comma))
+            .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
+            .map(|exprs| Literal::List(exprs)))
+        .or(expr
+            .clone()
+            .separated_by(just(Token::Comma))
+            .delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
+            .map(|exprs| Literal::Tuple(exprs)))
     }
 }
 
 impl Expr {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> + Clone {
         recursive(|_expr| {
-            let atom = Literal::parser()
+            let atom = Literal::parser(_expr)
                 .map(Expr::Literal)
                 .boxed()
                 .or(IdentAst::parser().map(Expr::Ident).boxed());
@@ -77,14 +89,16 @@ impl Expr {
                 .foldr(|op, expr| Expr::UnaryOperator(op, Box::new(expr)));
             let bin_parsers = [
                 BinaryOperator::mul_parser().boxed(),
-            BinaryOperator::add_parser().boxed(),
+                BinaryOperator::add_parser().boxed(),
             ];
             let mut binary = unary.boxed();
             for parser in bin_parsers {
                 binary = binary
                     .clone()
                     .then(parser.then(binary).repeated())
-                    .foldl(|left, (op, right)| {Expr::BinaryOperator(Box::new(left), op, Box::new(right))})
+                    .foldl(|left, (op, right)| {
+                        Expr::BinaryOperator(Box::new(left), op, Box::new(right))
+                    })
                     .boxed();
             }
             binary = binary
@@ -92,7 +106,8 @@ impl Expr {
                 .then(ComparisonOperators::parser().then(binary).repeated())
                 .foldl(|left, (op, right)| {
                     Expr::ComparisonOperators(Box::new(left), op, Box::new(right))
-                }).boxed();
+                })
+                .boxed();
             binary
         })
     }
@@ -245,7 +260,8 @@ impl FnCall {
         IdentAst::parser()
             .then_ignore(just(Token::ParenOpen))
             .then(Expr::parser().separated_by(just(Token::Comma)))
-            .then_ignore(just(Token::ParenClose)).then_ignore(just(Token::Semicolon))
+            .then_ignore(just(Token::ParenClose))
+            .then_ignore(just(Token::Semicolon))
             .map(|(name, args)| FnCall { name, args })
     }
 }
