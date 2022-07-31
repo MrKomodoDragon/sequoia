@@ -59,7 +59,12 @@ impl Literal {
             Token::Boolean(bool) => Ok(Literal::Bool(bool::from_str(bool).unwrap())),
             _ => Err(Simple::expected_input_found(
                 span,
-                [Some(Token::Integer("...")), Some(Token::Float("...")), Some(Token::Str("...")), Some(Token::Boolean("..."))],
+                [
+                    Some(Token::Integer("...")),
+                    Some(Token::Float("...")),
+                    Some(Token::Str("...")),
+                    Some(Token::Boolean("...")),
+                ],
                 Some(token),
             )),
         })
@@ -207,6 +212,8 @@ impl Statement {
                 .or(Let::parser(expr.clone()).map(Statement::Let))
                 .or(Return::parser().map(Statement::Return))
                 .or(FnCall::parser().map(Statement::FnCall))
+                .or(While::parser(stmt.clone()).map(Statement::While))
+                .or(If::parser(stmt.clone()).map(Statement::If))
         })
     }
 }
@@ -263,5 +270,42 @@ impl FnCall {
             .then_ignore(just(Token::ParenClose))
             .then_ignore(just(Token::Semicolon))
             .map(|(name, args)| FnCall { name, args })
+    }
+}
+
+impl While {
+    pub fn parser<'a>(
+        stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,
+    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just([Token::While])
+            .ignore_then(Expr::parser()).then_ignore(just(Token::BraceOpen))
+            .then(stmt.repeated()).then_ignore(just(Token::BraceClose))
+            .map(|(cond, stmts)| While { cond, stmts })
+    }
+}
+
+impl Else {
+    pub fn parser<'a>(stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just([Token::Else])
+            .ignore_then(Expr::parser()).then_ignore(just(Token::BraceOpen))
+            .then(stmt.repeated()).then_ignore(just(Token::BraceClose))
+            .map(|(cond, stmts)| Else { cond, stmts })
+    }
+}
+
+impl ElsIf {
+    pub fn parser<'a>(stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just([Token::ElsIf])
+            .ignore_then(Expr::parser()).then_ignore(just(Token::BraceOpen))
+            .then(stmt.repeated()).then_ignore(just(Token::BraceClose))
+            .map(|(cond, stmts)| ElsIf { cond, stmts })
+    }
+}
+
+impl If {
+    pub fn parser<'a>(stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>> + Clone,) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::If).ignore_then(Expr::parser()).then_ignore(just(Token::BraceOpen)).then(stmt.clone().repeated()).then_ignore(just(Token::BraceClose)).then(ElsIf::parser(stmt.clone()).repeated().or_not()).then(Else::parser(stmt.clone()).or_not()).map(|(((cond, stmts), elsif), r#else)|{
+            If { cond, stmts, elsif, r#else}
+        })
     }
 }

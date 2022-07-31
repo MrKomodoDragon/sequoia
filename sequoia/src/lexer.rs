@@ -86,11 +86,14 @@ pub enum Token<'a> {
     #[token("if")]
     If,
 
+    #[token("while")]
+    While,
+
     #[token("else")]
     Else,
 
     #[token("elsif")]
-    ElseIf,
+    ElsIf,
 
     #[token("let")]
     Let,

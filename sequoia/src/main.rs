@@ -9,9 +9,19 @@ mod parser;
 fn main() {
     let str = String::from(
         r#"fn bomb_is_sus(sus: Int) -> Int {
-            return true;
+            if true {
+                return true;
+            } elsif true {
+                return true;
+            } elsif false {
+                return false;
             }
-            bomb_is_sus((9));"#,
+            else true {
+                return true;
+            }
+
+            }
+            bomb_is_sus(9);"#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");

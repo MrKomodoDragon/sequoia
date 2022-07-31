@@ -71,14 +71,15 @@ pub enum Expr {
     UnaryOperator(UnaryOperator, Box<Expr>),
     ComparisonOperators(Box<Expr>, ComparisonOperators, Box<Expr>),
     Ident(IdentAst),
-    
 }
 #[derive(Debug, Clone)]
 pub enum Statement {
     Let(Let),
     FnDecl(FunctionDecl),
     Return(Return),
-    FnCall(FnCall)
+    FnCall(FnCall),
+    While(While),
+    If(If)
 }
 
 #[derive(Debug, Clone)]
@@ -91,3 +92,27 @@ pub struct FnCall {
     pub name: IdentAst,
     pub args: Vec<Expr>,
 }
+#[derive(Debug, Clone)]
+pub struct While {
+    pub cond: Expr,
+    pub stmts: Vec<Statement>,
+}
+#[derive(Debug, Clone)]
+pub struct If {
+    pub cond: Expr,
+    pub stmts: Vec<Statement>,
+    pub elsif: Option<Vec<ElsIf>>,
+    pub r#else: Option<Else>
+}
+#[derive(Debug, Clone)]
+pub struct ElsIf {
+    pub cond: Expr,
+    pub stmts: Vec<Statement>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Else {
+    pub cond: Expr,
+    pub stmts: Vec<Statement>,
+}
+
