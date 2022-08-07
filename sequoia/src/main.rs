@@ -6,9 +6,8 @@ use crate::parser::parse;
 mod ast;
 mod lexer;
 mod parser;
-use chumsky::{debug, prelude::*};
 fn main() {
-    let str = String::from(r#"n bomb_is_sus(sus: Int) -> Int {
+    let str = String::from(r#"fn bomb_is_sus() -> Int {
                    if true {
                         return true;
                     } elsif true {
@@ -21,7 +20,7 @@ fn main() {
                     }
         
                     }
-                    bomb_is_sus(9, bomb=9);"#);
+                    bomb_is_sus();"#);
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);

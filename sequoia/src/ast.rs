@@ -14,7 +14,8 @@ pub struct Arg {
 #[derive(Clone, Debug)]
 pub struct FunctionDecl {
     pub name: IdentAst,
-    pub args: Vec<Arg>,
+    pub args: Option<Vec<Arg>>,
+    pub kwargs: Option<Vec<Arg>>,
     pub return_kind: Kind,
     pub statements: Vec<Statement>,
 }
@@ -34,7 +35,6 @@ pub enum Literal {
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
     Bool(bool),
-    Ident(IdentAst)
 }
 
 #[derive(Debug, Clone)]
@@ -91,8 +91,8 @@ pub struct Root {
 #[derive(Debug, Clone)]
 pub struct FnCall {
     pub name: IdentAst,
-    pub args: Vec<Expr>,
-    pub kwargs: Vec<Kwarg>
+    pub args: Option<Vec<Expr>>,
+    pub kwargs: Option<Vec<Kwarg>>
 }
 #[derive(Debug, Clone)]
 pub struct While {

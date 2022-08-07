@@ -79,7 +79,7 @@ impl Literal {
             .clone()
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
-            .map(|exprs| Literal::Tuple(exprs))).or(IdentAst::parser().map(Literal::Ident)).labelled("Literal")
+            .map(|exprs| Literal::Tuple(exprs))).labelled("Literal")
     }
 }
 
@@ -88,7 +88,7 @@ impl Expr {
         recursive(|_expr| {
             let atom = Literal::parser(_expr)
                 .map(Expr::Literal)
-                .boxed();
+                .boxed().or(IdentAst::parser().map(Expr::Ident)).boxed();
             let unary = UnaryOperator::parser()
                 .repeated()
                 .then(atom)
@@ -234,7 +234,7 @@ impl FunctionDecl {
         just(Token::Function)
             .ignore_then(IdentAst::parser())
             .then_ignore(just(Token::ParenOpen))
-            .then(Arg::parser().separated_by(just(Token::Comma)))
+            .then(Arg::parser().then_ignore(just(Token::Comma)).repeated().or_not()).then(just([Token::Multiply, Token::Comma]).ignore_then(Arg::parser().separated_by(just(Token::Comma))).or_not())
             .then_ignore(just([
                 Token::ParenClose,
                 Token::Subtract,
@@ -244,9 +244,10 @@ impl FunctionDecl {
             .then_ignore(just(Token::BraceOpen))
             .then(stmt.repeated())
             .then_ignore(just(Token::BraceClose))
-            .map(|(((name, args), r_kind), stmts)| FunctionDecl {
+            .map(|((((name, args), kwargs), r_kind), stmts)| FunctionDecl {
                 name,
                 args,
+                kwargs, 
                 return_kind: r_kind,
                 statements: stmts,
             }).labelled("FunctionDecl")
@@ -257,8 +258,8 @@ impl FnCall {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         IdentAst::parser()
             .then_ignore(just(Token::ParenOpen))
-            .then(Expr::parser().then_ignore(just(Token::Comma)).repeated().at_least(1))
-            .then(Kwarg::parser().separated_by(just(Token::Comma)))
+            .then(Expr::parser().then_ignore(just(Token::Comma)).repeated().or_not())
+            .then(Kwarg::parser().separated_by(just(Token::Comma)).or_not())
             .then_ignore(just(Token::ParenClose))
             .then_ignore(just(Token::Semicolon))
             .map(|((name, args), kwargs)| FnCall { name, args, kwargs }).labelled("FnCall")
