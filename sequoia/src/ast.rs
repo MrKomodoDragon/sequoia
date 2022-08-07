@@ -34,6 +34,7 @@ pub enum Literal {
     List(Vec<Expr>),
     Tuple(Vec<Expr>),
     Bool(bool),
+    Ident(IdentAst)
 }
 
 #[derive(Debug, Clone)]
@@ -91,6 +92,7 @@ pub struct Root {
 pub struct FnCall {
     pub name: IdentAst,
     pub args: Vec<Expr>,
+    pub kwargs: Vec<Kwarg>
 }
 #[derive(Debug, Clone)]
 pub struct While {
@@ -115,4 +117,13 @@ pub struct Else {
     pub cond: Expr,
     pub stmts: Vec<Statement>,
 }
+#[derive(Debug, Clone)]
+pub struct Kwarg {
+    pub name: IdentAst,
+    pub expr: Expr
+}
 
+#[derive(Debug, Clone)]
+pub struct KwargName {
+    pub name: String,
+}
