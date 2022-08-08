@@ -11,9 +11,9 @@ fn main() {
         r#"fn bomb_is_sus() -> Int {
                    if true {
                         return true;
-                    } elsif true {
+                    } else if true {
                         return true;
-                    } elsif false {
+                    } else if false {
                         return false;
                     }
                     else true {
