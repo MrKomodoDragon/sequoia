@@ -98,8 +98,8 @@ pub enum Token<'a> {
     #[token("let")]
     Let,
 
-    #[token("const")]
-    Const,
+    #[token("mut")]
+    MutableKeyword,
 
     #[token("fn")]
     Function,

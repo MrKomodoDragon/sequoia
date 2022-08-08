@@ -23,7 +23,9 @@ pub struct FunctionDecl {
 #[derive(Debug, Clone)]
 pub struct Let {
     pub name: IdentAst,
+    pub mutable: bool,
     pub kind: Kind, //if you're wondering why it's not named something with the word type in it, blame sampersand.
+    pub assign_type: AssignOp,
     pub rhs: Expr,
 }
 
@@ -80,7 +82,7 @@ pub enum Statement {
     Return(Return),
     FnCall(FnCall),
     While(While),
-    If(If)
+    If(If),
 }
 
 #[derive(Debug, Clone)]
@@ -92,7 +94,7 @@ pub struct Root {
 pub struct FnCall {
     pub name: IdentAst,
     pub args: Option<Vec<Expr>>,
-    pub kwargs: Option<Vec<Kwarg>>
+    pub kwargs: Option<Vec<Kwarg>>,
 }
 #[derive(Debug, Clone)]
 pub struct While {
@@ -103,11 +105,11 @@ pub struct While {
 pub struct If {
     pub cond: Expr,
     pub stmts: Vec<Statement>,
-    pub elsif: Option<Vec<ElsIf>>,
-    pub r#else: Option<Else>
+    pub elsif: Option<Vec<ElseIf>>,
+    pub r#else: Option<Else>,
 }
 #[derive(Debug, Clone)]
-pub struct ElsIf {
+pub struct ElseIf {
     pub cond: Expr,
     pub stmts: Vec<Statement>,
 }
@@ -120,10 +122,19 @@ pub struct Else {
 #[derive(Debug, Clone)]
 pub struct Kwarg {
     pub name: IdentAst,
-    pub expr: Expr
+    pub expr: Expr,
 }
 
 #[derive(Debug, Clone)]
 pub struct KwargName {
     pub name: String,
+}
+
+#[derive(Debug, Clone)]
+pub enum AssignOp {
+    Assign,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }

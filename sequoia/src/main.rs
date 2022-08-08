@@ -7,7 +7,8 @@ mod ast;
 mod lexer;
 mod parser;
 fn main() {
-    let str = String::from(r#"fn bomb_is_sus() -> Int {
+    let str = String::from(
+        r#"fn bomb_is_sus() -> Int {
                    if true {
                         return true;
                     } elsif true {
@@ -18,9 +19,10 @@ fn main() {
                     else true {
                         return true;
                     }
-        
+                    let bomb: Int +=9;
                     }
-                    bomb_is_sus();"#);
+                    bomb_is_sus();"#,
+    );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);
