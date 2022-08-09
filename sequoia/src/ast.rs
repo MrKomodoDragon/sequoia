@@ -83,6 +83,8 @@ pub enum Statement {
     FnCall(FnCall),
     While(While),
     If(If),
+    Break(Break),
+    Continue(Continue)
 }
 
 #[derive(Debug, Clone)]
@@ -138,3 +140,7 @@ pub enum AssignOp {
     Multiply,
     Divide,
 }
+#[derive(Debug, Clone)]
+pub struct Break {}
+#[derive(Debug, Clone)]
+pub struct Continue {}

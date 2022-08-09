@@ -117,7 +117,7 @@ pub enum Token<'a> {
     #[token("return")]
     Return,
 
-    #[token("Break")]
+    #[token("break")]
     Break,
 
     #[token("continue")]

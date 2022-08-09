@@ -223,7 +223,7 @@ impl Statement {
                 .or(Return::parser().map(Statement::Return))
                 .or(FnCall::parser().map(Statement::FnCall))
                 .or(While::parser(stmt.clone()).map(Statement::While))
-                .or(If::parser(stmt.clone()).map(Statement::If))
+                .or(If::parser(stmt.clone()).map(Statement::If)).or(Break::parser().map(Statement::Break)).or(Continue::parser().map(Statement::Continue))
         })
         .labelled("Statement")
     }
@@ -406,4 +406,12 @@ impl AssignOp {
             .or(just([Token::Multiply, Token::Equal]).to(AssignOp::Multiply))
             .or(just([Token::Divide, Token::Equal]).to(AssignOp::Divide))
     }
+}
+
+impl Break {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> { just(Token::Break).to(Break{})}
+}
+
+impl Continue {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> { just(Token::Continue).to(Continue{})}
 }
