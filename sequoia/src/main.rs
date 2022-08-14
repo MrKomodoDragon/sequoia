@@ -7,22 +7,15 @@ mod ast;
 mod lexer;
 mod parser;
 fn main() {
-    let str = String::from(
-        r#"fn bomb_is_sus() -> Int {
-                   if true {
-                        return true;
-                    } else if true {
-                        return true;
-                    } else if false {
-                        return false;
-                    }
-                    else true {
-                        return true;
-                    }
-                    let bomb: Int +=9;
-                    }
-                    bomb_is_sus();"#,
-    );
+    let str = String::from(r#"
+    mod a {
+        fn b(c: Int) -> Int {
+            return c;
+        }
+    }
+    use a::b;
+    b(9,);
+    "#);
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);

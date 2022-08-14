@@ -123,6 +123,12 @@ pub enum Token<'a> {
     #[token("continue")]
     Continue,
 
+    #[token("as")]
+    As,
+
+    #[token("mod")]
+    Mod,
+
     //Basic types
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
     Str(&'a str),

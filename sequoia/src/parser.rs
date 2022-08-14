@@ -6,11 +6,11 @@ use std::str::FromStr;
 
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
-) -> (Option<Root>, Vec<Simple<Token<'_>>>) {
+) -> Result<Root, Vec<Simple<Token<'a>>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
     let parser = Root::parser();
-    let output = parser.parse_recovery_verbose(stream);
+    let output = parser.parse(stream);
     output
 }
 
@@ -134,7 +134,8 @@ impl Let {
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>>,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Let)
-            .ignore_then(IdentAst::parser()).then(just(Token::MutableKeyword).or_not())
+            .ignore_then(IdentAst::parser())
+            .then(just(Token::MutableKeyword).or_not())
             .then_ignore(just(Token::Colon))
             .then(Kind::parser())
             .then(AssignOp::parser())
@@ -149,7 +150,7 @@ impl Let {
             })
             .labelled("Let")
     }
-}   
+}
 
 impl IdentAst {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -223,7 +224,11 @@ impl Statement {
                 .or(Return::parser().map(Statement::Return))
                 .or(FnCall::parser().map(Statement::FnCall))
                 .or(While::parser(stmt.clone()).map(Statement::While))
-                .or(If::parser(stmt.clone()).map(Statement::If)).or(Break::parser().map(Statement::Break)).or(Continue::parser().map(Statement::Continue))
+                .or(If::parser(stmt.clone()).map(Statement::If))
+                .or(Break::parser().map(Statement::Break))
+                .or(Continue::parser().map(Statement::Continue))
+                .or(ImportStmt::parser().map(Statement::Import))
+                .or(Module::parser(stmt).map(Statement::Module))
         })
         .labelled("Statement")
     }
@@ -257,9 +262,7 @@ impl FunctionDecl {
             .ignore_then(IdentAst::parser())
             .then_ignore(just(Token::ParenOpen))
             .then(
-                Arg::parser()
-                    .then_ignore(just(Token::Comma))
-                    .repeated()
+                Arg::parser().separated_by(just(Token::Comma))
                     .or_not(),
             )
             .then(
@@ -409,9 +412,54 @@ impl AssignOp {
 }
 
 impl Break {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> { just(Token::Break).to(Break{})}
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Break).to(Break {})
+    }
 }
 
 impl Continue {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> { just(Token::Continue).to(Continue{})}
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Continue).to(Continue {})
+    }
+}
+
+impl Import {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        recursive(|import| {
+            let head = IdentAst::parser()
+                .then(just(Token::As).ignore_then(IdentAst::parser()).or_not())
+                .map(|(name, alias)| Head::Single { name, alias })
+                .or(import
+                    .separated_by(just(Token::Comma))
+                    .delimited_by(just(Token::BraceOpen), just(Token::BraceClose))
+                    .map(Head::Many));
+            IdentAst::parser()
+                .then_ignore(just(Token::DoubleColon))
+                .repeated()
+                .then(head)
+                .map(|(peths, head)| {
+                    Import {
+                        peth: peths.iter().map(|a| a.clone().name).collect::<Vec<String>>().join("::"),
+                        head: Box::new(head),
+                    }
+                })
+        })
+    }
+}
+
+
+impl ImportStmt {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Import)
+            .ignore_then(Import::parser())
+            .then_ignore(just(Token::Semicolon))
+            .map(|import| ImportStmt { import })
+    }
+}
+
+impl Module {
+    pub fn parser<'a>(stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Mod).ignore_then(IdentAst::parser()).then_ignore(just(Token::BraceOpen)).then(FunctionDecl::parser(stmt).repeated()).then_ignore(just(Token::BraceClose)).map(|(name, functions)| Module { name, functions })   
+    }
+    
 }

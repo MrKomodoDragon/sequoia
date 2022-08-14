@@ -84,7 +84,9 @@ pub enum Statement {
     While(While),
     If(If),
     Break(Break),
-    Continue(Continue)
+    Continue(Continue),
+    Import(ImportStmt),
+    Module(Module)
 }
 
 #[derive(Debug, Clone)]
@@ -144,3 +146,28 @@ pub enum AssignOp {
 pub struct Break {}
 #[derive(Debug, Clone)]
 pub struct Continue {}
+#[derive(Debug, Clone)]
+pub struct Import {
+    pub peth: String,
+    pub head: Box<Head>,
+}
+#[derive(Debug, Clone)]
+pub struct Peth {
+    pub peth: String,
+    pub alias: Option<IdentAst>,
+}
+#[derive(Debug, Clone)]
+pub enum Head {
+    Single { name: IdentAst, alias: Option<IdentAst> },
+    Many(Vec<Import>),
+}
+#[derive(Debug, Clone)]
+pub struct ImportStmt {
+    pub import: Import,
+}
+
+#[derive(Debug, Clone)]
+pub struct Module {
+    pub name: IdentAst,
+    pub functions: Vec<FunctionDecl>,
+}
