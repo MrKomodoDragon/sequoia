@@ -81,11 +81,6 @@ impl Literal {
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
             .map(|exprs| Literal::List(exprs)))
-        .or(expr
-            .clone()
-            .separated_by(just(Token::Comma))
-            .delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
-            .map(|exprs| Literal::Tuple(exprs)))
         .labelled("Literal")
     }
 }
@@ -181,8 +176,11 @@ impl Kind {
 
     pub fn list_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         Kind::basic_parser()
+                .then(just([Token::BracketOpen, Token::BracketClose]).repeated())
+                .foldl(|kind, _| Kind::List(Box::new(kind)))
+            .or(Kind::basic_parser()
             .then_ignore(just([Token::BracketOpen, Token::BracketClose]))
-            .map(|kind| Kind::List(Box::new(kind)))
+            .map(|kind| Kind::List(Box::new(kind))))
             .labelled("Kind::list_parser")
     }
     pub fn union_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -302,8 +300,9 @@ impl FnCall {
                     .or(Expr::parser()
                         .then_ignore(just(Token::Comma))
                         .repeated()
-                        .then(Kwarg::parser().separated_by(just(Token::Comma))).delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
-                        .map(|(expr, kwargs)| (expr, kwargs)))
+                        .then(Kwarg::parser().separated_by(just(Token::Comma)))
+                        .delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
+                        .map(|(expr, kwargs)| (expr, kwargs))),
             )
             .then_ignore(just(Token::Semicolon))
             .map(|(name, (args, kwargs))| FnCall { name, args, kwargs })
@@ -471,5 +470,18 @@ impl Module {
             .then(FunctionDecl::parser(stmt).repeated())
             .then_ignore(just(Token::BraceClose))
             .map(|(name, functions)| Module { name, functions })
+    }
+}
+
+impl ReAss {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        IdentAst::parser()
+            .then(AssignOp::parser())
+            .then(Expr::parser())
+            .map(|((name, assignop), rhs)| ReAss {
+                name,
+                assignop,
+                rhs,
+            })
     }
 }

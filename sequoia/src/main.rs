@@ -8,8 +8,8 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#"
-    b();
+        r#" let x: Int[][] = [[9, 10], [11, 12]];
+
     "#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();

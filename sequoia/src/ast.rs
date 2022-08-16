@@ -35,7 +35,6 @@ pub enum Literal {
     Str(String),
     Float(f64),
     List(Vec<Expr>),
-    Tuple(Vec<Expr>),
     Bool(bool),
 }
 
@@ -173,4 +172,10 @@ pub struct ImportStmt {
 pub struct Module {
     pub name: IdentAst,
     pub functions: Vec<FunctionDecl>,
+}
+
+pub struct ReAss {
+    pub name: IdentAst,
+    pub assignop: AssignOp,
+    pub rhs: Expr,
 }
