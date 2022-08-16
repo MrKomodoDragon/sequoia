@@ -261,10 +261,7 @@ impl FunctionDecl {
         just(Token::Function)
             .ignore_then(IdentAst::parser())
             .then_ignore(just(Token::ParenOpen))
-            .then(
-                Arg::parser().separated_by(just(Token::Comma))
-                    .or_not(),
-            )
+            .then(Arg::parser().separated_by(just(Token::Comma)).or_not())
             .then(
                 just([Token::Multiply, Token::Comma])
                     .ignore_then(Arg::parser().separated_by(just(Token::Comma)))
@@ -293,17 +290,23 @@ impl FunctionDecl {
 impl FnCall {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         IdentAst::parser()
-            .then_ignore(just(Token::ParenOpen))
             .then(
-                Expr::parser()
-                    .then_ignore(just(Token::Comma))
-                    .repeated()
-                    .or_not(),
+                Kwarg::parser()
+                    .separated_by(just(Token::Comma))
+                    .delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
+                    .map(|kwargs| (vec![], kwargs))
+                    .or(Expr::parser()
+                        .separated_by(just(Token::Comma))
+                        .delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
+                        .map(|args| (args, vec![])))
+                    .or(Expr::parser()
+                        .then_ignore(just(Token::Comma))
+                        .repeated()
+                        .then(Kwarg::parser().separated_by(just(Token::Comma))).delimited_by(just(Token::ParenOpen), just(Token::ParenClose))
+                        .map(|(expr, kwargs)| (expr, kwargs)))
             )
-            .then(Kwarg::parser().separated_by(just(Token::Comma)).or_not())
-            .then_ignore(just(Token::ParenClose))
             .then_ignore(just(Token::Semicolon))
-            .map(|((name, args), kwargs)| FnCall { name, args, kwargs })
+            .map(|(name, (args, kwargs))| FnCall { name, args, kwargs })
             .labelled("FnCall")
     }
 }
@@ -373,7 +376,7 @@ impl If {
 
 impl Kwarg {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        IdentAst::parser()
+        KwargName::parser()
             .then_ignore(just(Token::Equal))
             .then(Expr::parser())
             .map(|(name, expr)| Kwarg { name, expr })
@@ -437,16 +440,17 @@ impl Import {
                 .then_ignore(just(Token::DoubleColon))
                 .repeated()
                 .then(head)
-                .map(|(peths, head)| {
-                    Import {
-                        peth: peths.iter().map(|a| a.clone().name).collect::<Vec<String>>().join("::"),
-                        head: Box::new(head),
-                    }
+                .map(|(peths, head)| Import {
+                    peth: peths
+                        .iter()
+                        .map(|a| a.clone().name)
+                        .collect::<Vec<String>>()
+                        .join("::"),
+                    head: Box::new(head),
                 })
         })
     }
 }
-
 
 impl ImportStmt {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -458,8 +462,14 @@ impl ImportStmt {
 }
 
 impl Module {
-    pub fn parser<'a>(stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        just(Token::Mod).ignore_then(IdentAst::parser()).then_ignore(just(Token::BraceOpen)).then(FunctionDecl::parser(stmt).repeated()).then_ignore(just(Token::BraceClose)).map(|(name, functions)| Module { name, functions })   
+    pub fn parser<'a>(
+        stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,
+    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        just(Token::Mod)
+            .ignore_then(IdentAst::parser())
+            .then_ignore(just(Token::BraceOpen))
+            .then(FunctionDecl::parser(stmt).repeated())
+            .then_ignore(just(Token::BraceClose))
+            .map(|(name, functions)| Module { name, functions })
     }
-    
 }

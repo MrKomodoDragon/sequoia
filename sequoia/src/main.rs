@@ -7,15 +7,11 @@ mod ast;
 mod lexer;
 mod parser;
 fn main() {
-    let str = String::from(r#"
-    mod a {
-        fn b(c: Int) -> Int {
-            return c;
-        }
-    }
-    use a::b;
-    b(9,);
-    "#);
+    let str = String::from(
+        r#"
+    b();
+    "#,
+    );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);

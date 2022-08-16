@@ -86,7 +86,7 @@ pub enum Statement {
     Break(Break),
     Continue(Continue),
     Import(ImportStmt),
-    Module(Module)
+    Module(Module),
 }
 
 #[derive(Debug, Clone)]
@@ -97,8 +97,8 @@ pub struct Root {
 #[derive(Debug, Clone)]
 pub struct FnCall {
     pub name: IdentAst,
-    pub args: Option<Vec<Expr>>,
-    pub kwargs: Option<Vec<Kwarg>>,
+    pub args: Vec<Expr>,
+    pub kwargs: Vec<Kwarg>,
 }
 #[derive(Debug, Clone)]
 pub struct While {
@@ -125,7 +125,7 @@ pub struct Else {
 }
 #[derive(Debug, Clone)]
 pub struct Kwarg {
-    pub name: IdentAst,
+    pub name: KwargName,
     pub expr: Expr,
 }
 
@@ -158,7 +158,10 @@ pub struct Peth {
 }
 #[derive(Debug, Clone)]
 pub enum Head {
-    Single { name: IdentAst, alias: Option<IdentAst> },
+    Single {
+        name: IdentAst,
+        alias: Option<IdentAst>,
+    },
     Many(Vec<Import>),
 }
 #[derive(Debug, Clone)]
