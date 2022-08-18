@@ -8,7 +8,12 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" let x: Int[][] = [[9, 10], [11, 12]];
+        r#" mod x{
+            fn z() -> Int {
+                return 9;
+            }
+            mod x {}
+        }
 
     "#,
     );

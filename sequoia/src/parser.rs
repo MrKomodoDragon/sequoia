@@ -176,11 +176,16 @@ impl Kind {
 
     pub fn list_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         Kind::basic_parser()
-                .then(just([Token::BracketOpen, Token::BracketClose]).repeated())
-                .foldl(|kind, _| Kind::List(Box::new(kind)))
-            .or(Kind::basic_parser()
-            .then_ignore(just([Token::BracketOpen, Token::BracketClose]))
-            .map(|kind| Kind::List(Box::new(kind))))
+            .then(
+                SeparateNumberParserBecauseIdkWhy::parser()
+                    .or_not()
+                    .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
+                    .repeated(),
+            )
+            .foldl(|a, b| Kind::List {
+                kind: Box::new(a),
+                index: b,
+            })
             .labelled("Kind::list_parser")
     }
     pub fn union_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -462,14 +467,31 @@ impl ImportStmt {
 
 impl Module {
     pub fn parser<'a>(
-        stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,
+        stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>> + 'a,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        just(Token::Mod)
-            .ignore_then(IdentAst::parser())
-            .then_ignore(just(Token::BraceOpen))
-            .then(FunctionDecl::parser(stmt).repeated())
-            .then_ignore(just(Token::BraceClose))
-            .map(|(name, functions)| Module { name, functions })
+        let ident = IdentAst::parser();
+        let function_parser = FunctionDecl::parser(stmt)
+            .repeated()
+            .or_not()
+            ;
+        recursive(
+            |module: Recursive<'_, Token<'_>, Self, Simple<Token<'_>>>| {
+                just(Token::Mod)
+                    .ignore_then(ident)
+                    .then(function_parser.then(module.or_not()).delimited_by(just(Token::BraceOpen), just(Token::BraceClose)))
+                    .map(|(name, (functions, module))|{
+                        let module_box = match module {
+                            Some(i) => Some(Box::new(i)),
+                            _ => None,
+                        };
+                        Module {
+                            name,
+                            modules: module_box,
+                            functions,
+                        }
+                    })
+            },
+        )
     }
 }
 
@@ -483,5 +505,13 @@ impl ReAss {
                 assignop,
                 rhs,
             })
+    }
+}
+
+impl SeparateNumberParserBecauseIdkWhy {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        select! {
+            Token::Integer(i) => SeparateNumberParserBecauseIdkWhy(i64::from_str(i).unwrap())
+        }
     }
 }

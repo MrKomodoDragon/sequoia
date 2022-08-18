@@ -44,7 +44,10 @@ pub enum Kind {
     Float,
     Str,
     Bool,
-    List(Box<Kind>),
+    List {
+        kind: Box<Kind>,
+        index: Option<SeparateNumberParserBecauseIdkWhy>,
+    },
     Union(Vec<Box<Kind>>),
     Optional(Box<Kind>),
 }
@@ -171,11 +174,14 @@ pub struct ImportStmt {
 #[derive(Debug, Clone)]
 pub struct Module {
     pub name: IdentAst,
-    pub functions: Vec<FunctionDecl>,
+    pub modules: Option<Box<Module>>,
+    pub functions: Option<Vec<FunctionDecl>>,
 }
-
+#[derive(Debug, Clone)]
 pub struct ReAss {
     pub name: IdentAst,
     pub assignop: AssignOp,
     pub rhs: Expr,
 }
+#[derive(Debug, Clone)]
+pub struct SeparateNumberParserBecauseIdkWhy(pub i64);
