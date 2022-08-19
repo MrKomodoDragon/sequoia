@@ -37,7 +37,8 @@ pub enum Literal {
     Float(f64),
     List(Vec<Expr>),
     Bool(bool),
-    ArrrayIndex(ArrayIndex)
+    ArrrayIndex(ArrayIndex),
+    None
 }
 
 #[derive(Debug, Clone)]
@@ -46,6 +47,7 @@ pub enum Kind {
     Float,
     Str,
     Bool,
+    NoneType,
     List {
         kind: Box<Kind>,
         size: Option<SeparateNumberParserBecauseIdkWhy>,
@@ -59,6 +61,7 @@ pub enum BinaryOperator {
     Sub,
     Mul,
     Div,
+    Modulus
 }
 #[derive(Clone, Debug)]
 pub enum ComparisonOperators {

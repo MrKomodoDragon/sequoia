@@ -132,6 +132,8 @@ pub enum Token<'a> {
     #[token("pub")]
     Public,
 
+    #[token("None")]
+    None,
     //Basic types
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
     Str(&'a str),
@@ -153,6 +155,7 @@ pub enum Token<'a> {
     #[token("Int")]
     #[token("Float")]
     #[token("Bool")]
+    #[token("NoneType")]
     Type(&'a str),
 
     #[error]

@@ -3,7 +3,7 @@ use crate::{ast::*, lexer::Token};
 use chumsky::Stream;
 use chumsky::{error::Simple, prelude::*};
 use std::str::FromStr;
-/* */
+
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
 ) -> Result<Root, Vec<Simple<Token<'a>>>> {
@@ -24,10 +24,10 @@ impl Return {
     }
 }
 impl BinaryOperator {
-    pub fn mul_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn mul_parser_or_modulo<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Multiply)
             .to(BinaryOperator::Mul)
-            .or(just(Token::Divide).to(BinaryOperator::Div))
+            .or(just(Token::Divide).to(BinaryOperator::Div)).or(just(Token::Modulus).to(BinaryOperator::Modulus))
             .labelled("BinaryOperator, mul_parser")
     }
     pub fn add_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -81,7 +81,7 @@ impl Literal {
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
             .map(|exprs| Literal::List(exprs)))
-        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))
+        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex)).or(just(Token::None).to(Literal::None))
         .labelled("Literal")
     }
 }
@@ -99,7 +99,7 @@ impl Expr {
                 .then(atom)
                 .foldr(|op, expr| Expr::UnaryOperator(op, Box::new(expr)));
             let bin_parsers = [
-                BinaryOperator::mul_parser().boxed(),
+                BinaryOperator::mul_parser_or_modulo().boxed(),
                 BinaryOperator::add_parser().boxed(),
             ];
             let mut binary = unary.boxed();
@@ -171,6 +171,7 @@ impl Kind {
             Token::Type("Int") => Kind::Int,
             Token::Type("Float") => Kind::Float,
             Token::Type("Bool") => Kind::Bool,
+            Token::Type("NoneType") => Kind::NoneType,
         }
         .labelled("Kind::basic_parser")
     }

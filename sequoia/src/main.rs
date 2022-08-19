@@ -8,7 +8,7 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" pub fn a() -> Int {}
+        r#" let x: NoneType = None;
 
     "#,
     );
