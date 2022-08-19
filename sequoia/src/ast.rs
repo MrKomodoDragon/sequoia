@@ -13,11 +13,12 @@ pub struct Arg {
 }
 #[derive(Clone, Debug)]
 pub struct FunctionDecl {
+    pub public: bool,
     pub name: IdentAst,
     pub args: Option<Vec<Arg>>,
     pub kwargs: Option<Vec<Arg>>,
     pub return_kind: Kind,
-    pub statements: Vec<Statement>,
+    pub statements: Option<Vec<Statement>>,
 }
 
 #[derive(Debug, Clone)]
@@ -36,6 +37,7 @@ pub enum Literal {
     Float(f64),
     List(Vec<Expr>),
     Bool(bool),
+    ArrrayIndex(ArrayIndex)
 }
 
 #[derive(Debug, Clone)]
@@ -46,7 +48,7 @@ pub enum Kind {
     Bool,
     List {
         kind: Box<Kind>,
-        index: Option<SeparateNumberParserBecauseIdkWhy>,
+        size: Option<SeparateNumberParserBecauseIdkWhy>,
     },
     Union(Vec<Box<Kind>>),
     Optional(Box<Kind>),
@@ -89,6 +91,7 @@ pub enum Statement {
     Continue(Continue),
     Import(ImportStmt),
     Module(Module),
+    ReAssignment(ReAss),
 }
 
 #[derive(Debug, Clone)]
@@ -179,9 +182,20 @@ pub struct Module {
 }
 #[derive(Debug, Clone)]
 pub struct ReAss {
-    pub name: IdentAst,
+    pub thing_to_be_reassigned: StuffThatCanGoIntoReassignment,
     pub assignop: AssignOp,
     pub rhs: Expr,
 }
 #[derive(Debug, Clone)]
 pub struct SeparateNumberParserBecauseIdkWhy(pub i64);
+
+#[derive(Debug, Clone)]
+pub struct ArrayIndex {
+    pub arr_name: IdentAst,
+    pub index: Box<Expr>,
+}
+#[derive(Debug, Clone)]
+pub enum StuffThatCanGoIntoReassignment {
+    IdentAst(IdentAst),
+    ArrayIndex(ArrayIndex),
+}

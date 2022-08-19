@@ -3,7 +3,7 @@ use crate::{ast::*, lexer::Token};
 use chumsky::Stream;
 use chumsky::{error::Simple, prelude::*};
 use std::str::FromStr;
-
+/* */
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
 ) -> Result<Root, Vec<Simple<Token<'a>>>> {
@@ -81,6 +81,7 @@ impl Literal {
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
             .map(|exprs| Literal::List(exprs)))
+        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))
         .labelled("Literal")
     }
 }
@@ -88,7 +89,7 @@ impl Literal {
 impl Expr {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> + Clone {
         recursive(|_expr| {
-            let atom = Literal::parser(_expr)
+            let atom = Literal::parser(_expr.clone())
                 .map(Expr::Literal)
                 .boxed()
                 .or(IdentAst::parser().map(Expr::Ident))
@@ -184,7 +185,7 @@ impl Kind {
             )
             .foldl(|a, b| Kind::List {
                 kind: Box::new(a),
-                index: b,
+                size: b,
             })
             .labelled("Kind::list_parser")
     }
@@ -221,8 +222,9 @@ impl Statement {
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone + 'a,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         recursive(|stmt| {
-            FunctionDecl::parser(stmt.clone())
-                .map(Statement::FnDecl)
+            ReAss::parser()
+                .map(Statement::ReAssignment)
+                .or(FunctionDecl::parser(stmt.clone()).map(Statement::FnDecl))
                 .or(Let::parser(expr.clone()).map(Statement::Let))
                 .or(Return::parser().map(Statement::Return))
                 .or(FnCall::parser().map(Statement::FnCall))
@@ -261,7 +263,8 @@ impl FunctionDecl {
     pub fn parser<'a>(
         stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        just(Token::Function)
+        just(Token::Public).or_not()
+            .then(just(Token::Function)
             .ignore_then(IdentAst::parser())
             .then_ignore(just(Token::ParenOpen))
             .then(Arg::parser().separated_by(just(Token::Comma)).or_not())
@@ -277,15 +280,18 @@ impl FunctionDecl {
             ]))
             .then(Kind::parser())
             .then_ignore(just(Token::BraceOpen))
-            .then(stmt.repeated())
-            .then_ignore(just(Token::BraceClose))
-            .map(|((((name, args), kwargs), r_kind), stmts)| FunctionDecl {
-                name,
-                args,
-                kwargs,
-                return_kind: r_kind,
-                statements: stmts,
-            })
+            .then(stmt.repeated().or_not())
+            .then_ignore(just(Token::BraceClose)))
+            .map(
+                |(public, ((((name, args),kwargs ), r_kind),stmts))| FunctionDecl {
+                    public: public.is_some(),
+                    name,
+                    args,
+                    kwargs,
+                    return_kind: r_kind,
+                    statements: stmts,
+                }
+            )
             .labelled("FunctionDecl")
     }
 }
@@ -470,16 +476,17 @@ impl Module {
         stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>> + 'a,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         let ident = IdentAst::parser();
-        let function_parser = FunctionDecl::parser(stmt)
-            .repeated()
-            .or_not()
-            ;
+        let function_parser = FunctionDecl::parser(stmt).repeated().or_not();
         recursive(
             |module: Recursive<'_, Token<'_>, Self, Simple<Token<'_>>>| {
                 just(Token::Mod)
                     .ignore_then(ident)
-                    .then(function_parser.then(module.or_not()).delimited_by(just(Token::BraceOpen), just(Token::BraceClose)))
-                    .map(|(name, (functions, module))|{
+                    .then(
+                        function_parser
+                            .then(module.or_not())
+                            .delimited_by(just(Token::BraceOpen), just(Token::BraceClose)),
+                    )
+                    .map(|(name, (functions, module))| {
                         let module_box = match module {
                             Some(i) => Some(Box::new(i)),
                             _ => None,
@@ -497,11 +504,12 @@ impl Module {
 
 impl ReAss {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        IdentAst::parser()
+        StuffThatCanGoIntoReassignment::parser()
             .then(AssignOp::parser())
             .then(Expr::parser())
+            .then_ignore(just(Token::Semicolon))
             .map(|((name, assignop), rhs)| ReAss {
-                name,
+                thing_to_be_reassigned: name,
                 assignop,
                 rhs,
             })
@@ -513,5 +521,27 @@ impl SeparateNumberParserBecauseIdkWhy {
         select! {
             Token::Integer(i) => SeparateNumberParserBecauseIdkWhy(i64::from_str(i).unwrap())
         }
+    }
+}
+
+impl ArrayIndex {
+    pub fn parser<'a>(
+        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
+    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        IdentAst::parser()
+            .then(expr.delimited_by(just(Token::BracketOpen), just(Token::BracketClose)))
+            .map(|(name, index)| ArrayIndex {
+                index: Box::new(index),
+                arr_name: name,
+            })
+            .labelled("ArrayIndex")
+    }
+}
+
+impl StuffThatCanGoIntoReassignment {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        ArrayIndex::parser(Expr::parser())
+            .map(StuffThatCanGoIntoReassignment::ArrayIndex)
+            .or(IdentAst::parser().map(StuffThatCanGoIntoReassignment::IdentAst))
     }
 }

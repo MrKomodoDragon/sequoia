@@ -8,12 +8,7 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" mod x{
-            fn z() -> Int {
-                return 9;
-            }
-            mod x {}
-        }
+        r#" pub fn a() -> Int {}
 
     "#,
     );

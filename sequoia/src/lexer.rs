@@ -129,6 +129,9 @@ pub enum Token<'a> {
     #[token("mod")]
     Mod,
 
+    #[token("pub")]
+    Public,
+
     //Basic types
     #[regex(r#"(?x)" (?: \\. | [^\\"] )* ""#)]
     Str(&'a str),
