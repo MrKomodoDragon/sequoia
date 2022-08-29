@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#[allow(clippy::wildcard_imports)]
 use crate::{ast::*, lexer::Token};
 use chumsky::Stream;
 use chumsky::{error::Simple, prelude::*};
@@ -6,10 +7,10 @@ use std::str::FromStr;
 
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
-) -> Result<Root, Vec<Simple<Token<'a>>>> {
+) -> Result<Expr, Vec<Simple<Token<'a>>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    let parser = Root::parser();
+    let parser = Expr::parser();
     let output = parser.parse(stream);
     output
 }
@@ -24,10 +25,12 @@ impl Return {
     }
 }
 impl BinaryOperator {
-    pub fn mul_parser_or_modulo<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn mul_parser_or_modulo<'a>(
+    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Multiply)
             .to(BinaryOperator::Mul)
-            .or(just(Token::Divide).to(BinaryOperator::Div)).or(just(Token::Modulus).to(BinaryOperator::Modulus))
+            .or(just(Token::Divide).to(BinaryOperator::Div))
+            .or(just(Token::Modulus).to(BinaryOperator::Modulus))
             .labelled("BinaryOperator, mul_parser")
     }
     pub fn add_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -81,7 +84,8 @@ impl Literal {
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
             .map(|exprs| Literal::List(exprs)))
-        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex)).or(just(Token::None).to(Literal::None))
+        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))
+        .or(just(Token::None).to(Literal::None))
         .labelled("Literal")
     }
 }
@@ -130,7 +134,7 @@ impl Let {
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>>,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Let)
-            .ignore_then(IdentAst::parser())
+            .ignore_then(LetName::parser())
             .then(just(Token::MutableKeyword).or_not())
             .then_ignore(just(Token::Colon))
             .then(Kind::parser())
@@ -264,34 +268,37 @@ impl FunctionDecl {
     pub fn parser<'a>(
         stmt: impl chumsky::Parser<Token<'a>, Statement, Error = Simple<Token<'a>>>,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        just(Token::Public).or_not()
-            .then(just(Token::Function)
-            .ignore_then(IdentAst::parser())
-            .then_ignore(just(Token::ParenOpen))
-            .then(Arg::parser().separated_by(just(Token::Comma)).or_not())
+        just(Token::Public)
+            .or_not()
             .then(
-                just([Token::Multiply, Token::Comma])
-                    .ignore_then(Arg::parser().separated_by(just(Token::Comma)))
-                    .or_not(),
+                just(Token::Function)
+                    .ignore_then(IdentAst::parser())
+                    .then_ignore(just(Token::ParenOpen))
+                    .then(Arg::parser().separated_by(just(Token::Comma)).or_not())
+                    .then(
+                        just([Token::Multiply, Token::Comma])
+                            .ignore_then(Arg::parser().separated_by(just(Token::Comma)))
+                            .or_not(),
+                    )
+                    .then_ignore(just([
+                        Token::ParenClose,
+                        Token::Subtract,
+                        Token::GreaterThan,
+                    ]))
+                    .then(Kind::parser())
+                    .then_ignore(just(Token::BraceOpen))
+                    .then(stmt.repeated().or_not())
+                    .then_ignore(just(Token::BraceClose)),
             )
-            .then_ignore(just([
-                Token::ParenClose,
-                Token::Subtract,
-                Token::GreaterThan,
-            ]))
-            .then(Kind::parser())
-            .then_ignore(just(Token::BraceOpen))
-            .then(stmt.repeated().or_not())
-            .then_ignore(just(Token::BraceClose)))
             .map(
-                |(public, ((((name, args),kwargs ), r_kind),stmts))| FunctionDecl {
+                |(public, ((((name, args), kwargs), r_kind), stmts))| FunctionDecl {
                     public: public.is_some(),
                     name,
                     args,
                     kwargs,
                     return_kind: r_kind,
                     statements: stmts,
-                }
+                },
             )
             .labelled("FunctionDecl")
     }
@@ -387,7 +394,7 @@ impl If {
 
 impl Kwarg {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-        KwargName::parser()
+        IdentAst::parser()
             .then_ignore(just(Token::Equal))
             .then(Expr::parser())
             .map(|(name, expr)| Kwarg { name, expr })
@@ -395,11 +402,11 @@ impl Kwarg {
     }
 }
 
-impl KwargName {
+impl LetName {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         filter_map(|span, token| {
             if let Token::Ident(ident) = token {
-                Ok(KwargName {
+                Ok(LetName {
                     name: ident.to_string(),
                 })
             } else {
@@ -410,7 +417,7 @@ impl KwargName {
                 ))
             }
         })
-        .labelled("KwargName")
+        .labelled("LetName")
     }
 }
 
@@ -546,3 +553,4 @@ impl StuffThatCanGoIntoReassignment {
             .or(IdentAst::parser().map(StuffThatCanGoIntoReassignment::IdentAst))
     }
 }
+

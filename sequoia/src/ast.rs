@@ -23,7 +23,7 @@ pub struct FunctionDecl {
 
 #[derive(Debug, Clone)]
 pub struct Let {
-    pub name: IdentAst,
+    pub name: LetName,
     pub mutable: bool,
     pub kind: Kind, //if you're wondering why it's not named something with the word type in it, blame sampersand.
     pub assign_type: AssignOp,
@@ -133,12 +133,12 @@ pub struct Else {
 }
 #[derive(Debug, Clone)]
 pub struct Kwarg {
-    pub name: KwargName,
+    pub name: IdentAst,
     pub expr: Expr,
 }
 
 #[derive(Debug, Clone)]
-pub struct KwargName {
+pub struct LetName {
     pub name: String,
 }
 
@@ -202,3 +202,4 @@ pub enum StuffThatCanGoIntoReassignment {
     IdentAst(IdentAst),
     ArrayIndex(ArrayIndex),
 }
+
