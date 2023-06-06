@@ -8,6 +8,9 @@ pub enum Token<'a> {
     #[token("||")]
     Or,
 
+    #[token("!")]
+    Not,
+
     //Type related operators
     #[token("|")]
     Union,

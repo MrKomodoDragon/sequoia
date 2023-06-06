@@ -1,3 +1,6 @@
+use std::ops::Range;
+#[derive(Debug, Clone)]
+pub struct Spanned<T>(pub T, pub Range<usize>);
 #[derive(Debug, Clone)]
 pub struct IdentAst {
     pub name: String,
@@ -61,7 +64,9 @@ pub enum BinaryOperator {
     Sub,
     Mul,
     Div,
-    Modulus
+    Modulus,
+    AND,
+    OR,
 }
 #[derive(Clone, Debug)]
 pub enum ComparisonOperators {
@@ -73,6 +78,7 @@ pub enum ComparisonOperators {
 #[derive(Clone, Debug)]
 pub enum UnaryOperator {
     Neg,
+    NOT,
 }
 #[derive(Clone, Debug)]
 pub enum Expr {
@@ -86,7 +92,7 @@ pub enum Expr {
 pub enum Statement {
     Let(Let),
     FnDecl(FunctionDecl),
-    Return(Return),
+    Return(Spanned<Return>),
     FnCall(FnCall),
     While(While),
     If(If),
@@ -202,4 +208,3 @@ pub enum StuffThatCanGoIntoReassignment {
     IdentAst(IdentAst),
     ArrayIndex(ArrayIndex),
 }
-
