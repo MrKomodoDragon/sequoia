@@ -11,7 +11,7 @@ mod parser;
 mod interpreter;
 fn main() {
     let str = String::from(
-        r#"999999999
+        r#"9-9
     "#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();

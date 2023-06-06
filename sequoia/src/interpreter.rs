@@ -1,4 +1,4 @@
-use std::todo;
+use std::{todo, ops::Sub};
 
 use crate::ast::*;
 fn interpret(tree: Root) {
@@ -9,33 +9,46 @@ fn interpret(tree: Root) {
         }
     }
 }
+#[derive(Debug, Clone)]
+pub enum Value {
+    Int(i64),
+    Str(String)
+}
 
-pub(crate) fn expr_eval(input: Expr) -> i64 {
+impl Sub for Value {
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Value::Int(i), Value::Int(i2)) => Value::Int(i- i2),
+            _ => todo!() 
+        }
+    }
+
+    type Output = Value;
+}
+
+
+pub(crate) fn expr_eval(input: Expr) -> Value {
     match input {
         Expr::Literal(literal) => literal_eval(literal),
         Expr::BinaryOperator(expr ,op, expr2) => match op {
-            BinaryOperator::Add => expr_eval(*expr) + expr_eval(*expr2),
+            BinaryOperator::Add => todo!(),
             BinaryOperator::Sub => expr_eval(*expr) - expr_eval(*expr2),
-            BinaryOperator::Mul => expr_eval(*expr) * expr_eval(*expr2),
-            BinaryOperator::Div => expr_eval(*expr) / expr_eval(*expr2),
-            BinaryOperator::Modulus => expr_eval(*expr) % expr_eval(*expr2),
+            BinaryOperator::Mul => todo!(),
+            BinaryOperator::Div => todo!(),
+            BinaryOperator::Modulus => todo!(),
             BinaryOperator::AND => todo!(),
             BinaryOperator::OR => todo!(),
         }
-        Expr::UnaryOperator(op, expr) => match op {
-            UnaryOperator::Neg => -(expr_eval(*expr)),
-            UnaryOperator::NOT => !(expr_eval(*expr)),
-            
-        },
+        Expr::UnaryOperator(op, expr) => todo!(),
         Expr::ComparisonOperators(_, _, _) => todo!(),
         Expr::Ident(_) => todo!(),
     }
 }
 
 
-fn literal_eval(input: Literal) -> i64 {
+fn literal_eval(input: Literal) -> Value {
     match input {
-        Literal::Integer(_) => literal_integer(input),
+        Literal::Integer(i) => Value::Int(i),
         Literal::Str(_) => todo!(),
         Literal::Float(_) => todo!(),
         Literal::List(_) => todo!(),
@@ -46,9 +59,3 @@ fn literal_eval(input: Literal) -> i64 {
     
 }
 
-fn literal_integer(input: Literal) -> i64 {
-    match input {
-        Literal::Integer(i) => i,
-        _ => todo!()
-    }
-}
