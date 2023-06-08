@@ -1,6 +1,6 @@
 use std::{
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
-    todo, 
+    println, todo,
 };
 
 use crate::ast::*;
@@ -108,8 +108,26 @@ pub(crate) fn expr_eval(input: Expr) -> Value {
             BinaryOperator::Mul => expr_eval(*expr) * expr_eval(*expr2),
             BinaryOperator::Div => expr_eval(*expr) / expr_eval(*expr2),
             BinaryOperator::Modulus => expr_eval(*expr) % expr_eval(*expr2),
-            BinaryOperator::AND => todo!(),
-            BinaryOperator::OR => todo!(),
+            BinaryOperator::AND => {
+                let evaled_expr1 = expr_eval(*expr);
+                let evaled_expr2 = expr_eval(*expr2);
+                println!("{:?}", evaled_expr1);
+                println!("{:?}", evaled_expr2);
+                match (evaled_expr1, evaled_expr2) {
+                    (Value::Bool(i1), Value::Bool(i2)) => Value::Bool(i1 && i2),
+                    _ => todo!(),
+                }
+            }
+            BinaryOperator::OR => {
+                let evaled_expr1 = expr_eval(*expr);
+                let evaled_expr2 = expr_eval(*expr2);
+                println!("{:?}", evaled_expr1);
+                println!("{:?}", evaled_expr2);
+                match (evaled_expr1, evaled_expr2) {
+                    (Value::Bool(i1), Value::Bool(i2)) => Value::Bool(i1 || i2),
+                    _ => todo!(),
+                }
+            }
         },
         Expr::UnaryOperator(op, expr) => match op {
             UnaryOperator::Neg => -(expr_eval(*expr)),

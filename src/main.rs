@@ -11,7 +11,7 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#"[9, 9, 9, 9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9]
+        r#" --1 < 2 || 2 > 3
     "#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
@@ -22,4 +22,3 @@ fn main() {
     let intrepreted = expr_eval(ast_.clone().unwrap());
     println!("{:#?}", intrepreted)
 }
-

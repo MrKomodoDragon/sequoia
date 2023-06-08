@@ -117,6 +117,13 @@ impl Expr {
                 BinaryOperator::and_or_parser().boxed(),
             ];
             let mut binary = unary.boxed();
+            binary = binary
+                .clone()
+                .then(ComparisonOperators::parser().then(binary).repeated())
+                .foldl(|left, (op, right)| {
+                    Expr::ComparisonOperators(Box::new(left), op, Box::new(right))
+                })
+                .boxed();
             for parser in bin_parsers {
                 binary = binary
                     .clone()
@@ -126,13 +133,6 @@ impl Expr {
                     })
                     .boxed();
             }
-            binary = binary
-                .clone()
-                .then(ComparisonOperators::parser().then(binary).repeated())
-                .foldl(|left, (op, right)| {
-                    Expr::ComparisonOperators(Box::new(left), op, Box::new(right))
-                })
-                .boxed();
             binary
         })
         .labelled("Expr")
