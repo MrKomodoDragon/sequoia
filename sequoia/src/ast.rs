@@ -41,7 +41,7 @@ pub enum Literal {
     List(Vec<Expr>),
     Bool(bool),
     ArrrayIndex(ArrayIndex),
-    None
+    None,
 }
 
 #[derive(Debug, Clone)]

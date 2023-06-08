@@ -2,16 +2,16 @@
 #![warn(clippy::cargo)]
 use logos::Logos;
 
+use crate::interpreter::expr_eval;
 use crate::lexer::Token;
 use crate::parser::parse;
-use crate::interpreter::expr_eval;
 mod ast;
+mod interpreter;
 mod lexer;
 mod parser;
-mod interpreter;
 fn main() {
     let str = String::from(
-        r#"9-9
+        r#"[9, 9, 9, 9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9]
     "#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
@@ -22,3 +22,4 @@ fn main() {
     let intrepreted = expr_eval(ast_.clone().unwrap());
     println!("{:#?}", intrepreted)
 }
+

@@ -16,11 +16,12 @@ pub fn parse<'a>(
 }
 
 impl Return {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>>
+    {
         just(Token::Return)
             .ignore_then(Expr::parser())
             .then_ignore(just(Token::Semicolon))
-            .map_with_span(|expr, span| Spanned(Return {expr}, span))
+            .map_with_span(|expr, span| Spanned(Return { expr }, span))
             .labelled("Return")
     }
 }
@@ -61,8 +62,9 @@ impl ComparisonOperators {
 
 impl UnaryOperator {
     fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
-    just(Token::Not).to(UnaryOperator::NOT).or(just(Token::Subtract)
-            .to(UnaryOperator::Neg))
+        just(Token::Not)
+            .to(UnaryOperator::NOT)
+            .or(just(Token::Subtract).to(UnaryOperator::Neg))
             .labelled("UnaryOperator")
     }
 }
@@ -112,7 +114,7 @@ impl Expr {
             let bin_parsers = [
                 BinaryOperator::mul_parser_or_modulo().boxed(),
                 BinaryOperator::add_parser().boxed(),
-                BinaryOperator::and_or_parser().boxed()
+                BinaryOperator::and_or_parser().boxed(),
             ];
             let mut binary = unary.boxed();
             for parser in bin_parsers {
@@ -561,4 +563,3 @@ impl StuffThatCanGoIntoReassignment {
             .or(IdentAst::parser().map(StuffThatCanGoIntoReassignment::IdentAst))
     }
 }
-
