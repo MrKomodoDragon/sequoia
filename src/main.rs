@@ -3,6 +3,7 @@
 use logos::Logos;
 
 use crate::interpreter::expr_eval;
+use crate::interpreter::interpret;
 use crate::lexer::Token;
 use crate::parser::parse;
 mod ast;
@@ -11,7 +12,7 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" --1 < 2 || 2 > 3
+        r#" let x: Int = 9;
     "#,
     );
     let lex: Vec<_> = Token::lexer(&str).spanned().collect();
@@ -19,6 +20,7 @@ fn main() {
     println!("{:#?}", lex);
     let ast_ = parse(lex);
     println!("{:#?}", ast_.as_ref().unwrap());
-    let intrepreted = expr_eval(ast_.clone().unwrap());
+    let intrepreted = interpret(ast_.as_ref().unwrap().clone());
     println!("{:#?}", intrepreted)
+
 }

@@ -7,10 +7,10 @@ use std::str::FromStr;
 
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
-) -> Result<Expr, Vec<Simple<Token<'a>>>> {
+) -> Result<Root, Vec<Simple<Token<'a>>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    let parser = Expr::parser();
+    let parser = Root::parser();
     let output = parser.parse(stream);
     output
 }
@@ -215,7 +215,7 @@ impl Kind {
                     kinds
                         .clone()
                         .iter()
-                        .map(|kind| Box::new(kind.clone()))
+                        .map(|kind| kind.clone())
                         .collect(),
                 )
             })

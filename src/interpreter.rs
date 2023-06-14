@@ -1,13 +1,27 @@
 use std::{
+    collections::HashMap,
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     println, todo,
 };
 
+
+fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>)  {
+    if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+        inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs));
+
+    }
+    println!("{:#?}", vars_dict);
+
+}
 use crate::ast::*;
-fn interpret(tree: Root) {
+pub fn interpret(tree: Root) {
     for i in tree.statements {
+        let mut vars: HashMap<String, HashMap<String, Value>> = HashMap::from([(
+            "globals".to_string(),
+            HashMap::from([("dummy".to_string(), Value::Int(9))]),
+        )]);
         match i {
-            crate::ast::Statement::Let(_) => todo!(),
+            crate::ast::Statement::Let(i) => eval_let_statement(i, &mut vars),
             _ => todo!(),
         }
     }
@@ -20,7 +34,7 @@ pub enum Value {
     Bool(bool),
     Float(f64),
     ArrrayIndex { arr_name: String, index: Box<Value> },
-    List(Vec<Box<Value>>),
+    List(Vec<Value>),
     None,
 }
 
@@ -155,7 +169,7 @@ fn literal_eval(input: Literal) -> Value {
         Literal::List(list) => {
             let mut evaled_exprs = Vec::new();
             for i in list {
-                let i_evaled = Box::new(expr_eval(i));
+                let i_evaled = expr_eval(i);
                 evaled_exprs.push(i_evaled);
             }
             return Value::List(evaled_exprs);

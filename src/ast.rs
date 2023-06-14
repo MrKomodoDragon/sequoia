@@ -55,7 +55,7 @@ pub enum Kind {
         kind: Box<Kind>,
         size: Option<SeparateNumberParserBecauseIdkWhy>,
     },
-    Union(Vec<Box<Kind>>),
+    Union(Vec<Kind>),
     Optional(Box<Kind>),
 }
 #[derive(Clone, Debug)]
