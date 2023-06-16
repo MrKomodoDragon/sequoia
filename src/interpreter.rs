@@ -4,22 +4,72 @@ use std::{
     println, todo,
 };
 
-
-fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>)  {
-    if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-        inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs));
-
+fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>) {
+    match (let_stmt.kind, let_stmt.rhs.clone()) {
+        (Kind::Int, Expr::Literal(i)) => {
+            let eval_literaled = literal_eval(i);
+            println!("{:#?}", vars_dict);
+            if let Value::Int(integer) = eval_literaled {
+                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+                    inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
+                }
+                println!("{:#?}", vars_dict);
+            }
+        }
+        (Kind::Int, Expr::BinaryOperator(expr1, op, expr2)) => {
+            let evaled_expr = expr_eval(let_stmt.rhs.clone());
+            if let Value::Int(integer) = evaled_expr {
+                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+                    inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
+                }
+                println!("{:#?}", vars_dict);
+            }
+        }
+        (Kind::Int, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Int, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Int, Expr::Ident(_)) => todo!(),
+        (Kind::Float, Expr::Literal(_)) => todo!(),
+        (Kind::Float, Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::Float, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Float, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Float, Expr::Ident(_)) => todo!(),
+        (Kind::Str, Expr::Literal(_)) => todo!(),
+        (Kind::Str, Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::Str, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Str, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Str, Expr::Ident(_)) => todo!(),
+        (Kind::Bool, Expr::Literal(_)) => todo!(),
+        (Kind::Bool, Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::Bool, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Bool, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Bool, Expr::Ident(_)) => todo!(),
+        (Kind::NoneType, Expr::Literal(_)) => todo!(),
+        (Kind::NoneType, Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::NoneType, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::NoneType, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::NoneType, Expr::Ident(_)) => todo!(),
+        (Kind::List { kind, size }, Expr::Literal(_)) => todo!(),
+        (Kind::List { kind, size }, Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::List { kind, size }, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::List { kind, size }, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::List { kind, size }, Expr::Ident(_)) => todo!(),
+        (Kind::Union(_), Expr::Literal(_)) => todo!(),
+        (Kind::Union(_), Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::Union(_), Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Union(_), Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Union(_), Expr::Ident(_)) => todo!(),
+        (Kind::Optional(_), Expr::Literal(_)) => todo!(),
+        (Kind::Optional(_), Expr::BinaryOperator(_, _, _)) => todo!(),
+        (Kind::Optional(_), Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Optional(_), Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Optional(_), Expr::Ident(_)) => todo!(),
     }
-    println!("{:#?}", vars_dict);
-
 }
 use crate::ast::*;
 pub fn interpret(tree: Root) {
     for i in tree.statements {
-        let mut vars: HashMap<String, HashMap<String, Value>> = HashMap::from([(
-            "globals".to_string(),
-            HashMap::from([("dummy".to_string(), Value::Int(9))]),
-        )]);
+        let mut vars: HashMap<String, HashMap<String, Value>> =
+            HashMap::from([("globals".to_string(), HashMap::from([]))]);
         match i {
             crate::ast::Statement::Let(i) => eval_let_statement(i, &mut vars),
             _ => todo!(),

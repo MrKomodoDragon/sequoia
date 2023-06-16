@@ -210,15 +210,7 @@ impl Kind {
             .or(Kind::basic_parser())
             .separated_by(just(Token::Union))
             .at_least(2)
-            .map(|kinds| {
-                Kind::Union(
-                    kinds
-                        .clone()
-                        .iter()
-                        .map(|kind| kind.clone())
-                        .collect(),
-                )
-            })
+            .map(|kinds| Kind::Union(kinds.clone().iter().map(|kind| kind.clone()).collect()))
             .labelled("Kind::unions_parser")
     }
 
