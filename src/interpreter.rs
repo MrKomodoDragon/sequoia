@@ -5,7 +5,10 @@ use std::{
 };
 
 fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>) {
-    print!("at the beginning of the eval of let stmt: {:#?}", &vars_dict);
+    print!(
+        "at the beginning of the eval of let stmt: {:#?}",
+        &vars_dict
+    );
     match (let_stmt.kind, let_stmt.rhs.clone()) {
         (Kind::Int, Expr::Literal(i)) => {
             println!("evaling let stmt with integer");
@@ -14,11 +17,11 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
                     inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
                 }
-                println!("Let smt integer after: {:#?}", vars_dict);
+                println!("Let stmt integer after: {:#?}", vars_dict);
             }
         }
         (Kind::Int, Expr::BinaryOperator(expr1, op, expr2)) => {
-             println!("evaling let stmt with binop");
+            println!("evaling let stmt with binop");
             let evaled_expr = expr_eval(let_stmt.rhs.clone());
             if let Value::Int(integer) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
@@ -27,8 +30,17 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
                 println!("let stmt binops after: {:#?}", vars_dict);
             }
         }
-        (Kind::Int, Expr::UnaryOperator(_, _)) => todo!(),
-        (Kind::Int, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Int, Expr::UnaryOperator(op, expr)) => {
+            let evaled_expr = expr_eval(let_stmt.rhs.clone());
+            if let Value::Int(integer) = evaled_expr {
+                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+                    inner_hashmap.insert(let_stmt.name.name, evaled_expr);
+                }
+            }
+        }
+        (Kind::Int, Expr::ComparisonOperators(_, _, _)) => {
+            panic!("You have declared the type as Kind::Int but your ");
+        }
         (Kind::Int, Expr::Ident(_)) => todo!(),
         (Kind::Float, Expr::Literal(_)) => todo!(),
         (Kind::Float, Expr::BinaryOperator(_, _, _)) => todo!(),
@@ -70,7 +82,7 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
 use crate::ast::*;
 pub fn interpret(tree: Root) {
     let mut vars: HashMap<String, HashMap<String, Value>> =
-            HashMap::from([("globals".to_string(), HashMap::from([]))]);
+        HashMap::from([("globals".to_string(), HashMap::from([]))]);
     for i in tree.statements {
         match i {
             crate::ast::Statement::Let(i) => eval_let_statement(i, &mut vars),
