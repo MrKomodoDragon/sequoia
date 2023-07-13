@@ -82,10 +82,18 @@ pub enum UnaryOperator {
 }
 #[derive(Clone, Debug)]
 pub enum Expr {
-    Literal(Literal),
-    BinaryOperator(Box<Expr>, BinaryOperator, Box<Expr>),
-    UnaryOperator(UnaryOperator, Box<Expr>),
-    ComparisonOperators(Box<Expr>, ComparisonOperators, Box<Expr>),
+    Literal(Spanned<Literal>),
+    BinaryOperator(
+        Box<Spanned<Expr>>,
+        Spanned<BinaryOperator>,
+        Box<Spanned<Expr>>,
+    ),
+    UnaryOperator(Spanned<UnaryOperator>, Box<Spanned<Expr>>),
+    ComparisonOperators(
+        Box<Spanned<Expr>>,
+        Spanned<ComparisonOperators>,
+        Box<Spanned<Expr>>,
+    ),
     Ident(IdentAst),
 }
 #[derive(Debug, Clone)]

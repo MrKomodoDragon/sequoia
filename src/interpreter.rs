@@ -3,23 +3,23 @@ use std::{
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     println, todo,
 };
-
+/*
 fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>) {
     print!(
         "at the beginning of the eval of let stmt: {:#?}",
         &vars_dict
     );
     match (let_stmt.kind, let_stmt.rhs.clone()) {
-        (Kind::Int, Expr::Literal(i)) => {
-            println!("evaling let stmt with integer");
-            let eval_literaled = literal_eval(i);
-            if let Value::Int(integer) = eval_literaled {
-                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-                    inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
-                }
-                println!("Let stmt integer after: {:#?}", vars_dict);
-            }
+        (Kind::Int, Expr::Literal(i)) => {} /*{
+        println!("evaling let stmt with integer");
+        let eval_literaled = literal_eval(i);
+        if let Value::Int(integer) = eval_literaled {
+        if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+        inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
         }
+        println!("Let stmt integer after: {:#?}", vars_dict);
+        }
+        }*/
         (Kind::Int, Expr::BinaryOperator(expr1, op, expr2)) => {
             println!("evaling let stmt with binop");
             let evaled_expr = expr_eval(let_stmt.rhs.clone());
@@ -179,7 +179,7 @@ impl Not for Value {
 
 pub(crate) fn expr_eval(input: Expr) -> Value {
     match input {
-        Expr::Literal(literal) => literal_eval(literal),
+        Expr::Literal(literal) => todo!(), /*literal_eval(literal)*/
         Expr::BinaryOperator(expr, op, expr2) => match op {
             BinaryOperator::Add => expr_eval(*expr) + expr_eval(*expr2),
             BinaryOperator::Sub => expr_eval(*expr) - expr_eval(*expr2),
@@ -207,9 +207,9 @@ pub(crate) fn expr_eval(input: Expr) -> Value {
                 }
             }
         },
-        Expr::UnaryOperator(op, expr) => match op {
-            UnaryOperator::Neg => -(expr_eval(*expr)),
-            UnaryOperator::NOT => !(expr_eval(*expr)),
+        Expr::UnaryOperator(op, expr) => match op.0 {
+            UnaryOperator::Neg => todo!(), /*-(expr_eval(*expr)),*/
+            UnaryOperator::NOT => todo!(),
         },
         Expr::ComparisonOperators(expr, op, expr2) => match op {
             ComparisonOperators::GreaterThan => Value::Bool(expr_eval(*expr) > expr_eval(*expr2)),
@@ -246,3 +246,4 @@ fn literal_eval(input: Literal) -> Value {
         Literal::None => Value::None,
     }
 }
+*/

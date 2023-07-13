@@ -7,71 +7,75 @@ use std::str::FromStr;
 
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
-) -> Result<Root, Vec<Simple<Token<'a>>>> {
+) -> Result<Spanned<Expr>, Vec<Simple<Token<'a>>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    let parser = Root::parser();
-    let output = parser.parse(stream);
-    output
+    let parser = Expr::parser();
+    parser.parse(stream)
 }
-
-impl Return {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>>
-    {
-        just(Token::Return)
-            .ignore_then(Expr::parser())
-            .then_ignore(just(Token::Semicolon))
-            .map_with_span(|expr, span| Spanned(Return { expr }, span))
-            .labelled("Return")
-    }
-}
+// impl Return {
+//     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>>
+//     {
+//         just(Token::Return)
+//             .ignore_then(Expr::parser())
+//             .then_ignore(just(Token::Semicolon))
+//             .map_with_span(|expr, span| Spanned(Return { expr }, span))
+//             .labelled("Return")
+//     }
+// }
 impl BinaryOperator {
     pub fn mul_parser_or_modulo<'a>(
-    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::Multiply)
             .to(BinaryOperator::Mul)
             .or(just(Token::Divide).to(BinaryOperator::Div))
             .or(just(Token::Modulus).to(BinaryOperator::Modulus))
+            .map_with_span(|span, op| Spanned(span, op))
             .labelled("BinaryOperator, mul_parser")
     }
-    pub fn add_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn add_parser<'a>(
+    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::Plus)
             .to(BinaryOperator::Add)
             .or(just(Token::Subtract).to(BinaryOperator::Sub))
+            .map_with_span(|span, op| Spanned(span, op))
             .labelled("BinaryOperator, add_parser")
     }
 
-    pub fn and_or_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn and_or_parser<'a>(
+    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::And)
             .to(BinaryOperator::AND)
             .or(just(Token::Or).to(BinaryOperator::OR))
+            .map_with_span(|span, op| Spanned(span, op))
             .labelled("BinaryOperator, add_parser")
     }
 }
 
 impl ComparisonOperators {
-    fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::GreaterThan)
             .to(ComparisonOperators::GreaterThan)
             .or(just(Token::LessThan).to(ComparisonOperators::LessThan))
             .or(just(Token::GreaterOrEqual).to(ComparisonOperators::GreaterOrEqualTo))
             .or(just(Token::LessOrEqual).to(ComparisonOperators::LessThanOrEqualTo))
+            .map_with_span(|span, op| Spanned(span, op))
             .labelled("ComparisonOperators")
     }
 }
-
 impl UnaryOperator {
-    fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::Not)
             .to(UnaryOperator::NOT)
             .or(just(Token::Subtract).to(UnaryOperator::Neg))
+            .map_with_span(|span, op| Spanned(span, op))
             .labelled("UnaryOperator")
     }
 }
+
 impl Literal {
-    fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
-    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    fn parser<'a>(/* expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,*/
+    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         filter_map(|span, token| match token {
             Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
             Token::Float(float) => Ok(Literal::Float(f64::from_str(float).unwrap())),
@@ -88,29 +92,34 @@ impl Literal {
                 Some(token),
             )),
         })
-        .or(expr
+        /*.or(expr
             .clone()
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
-            .map(|exprs| Literal::List(exprs)))
-        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))
+            .map(|exprs| Literal::List(exprs)))*/
+        /*.or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))*/
         .or(just(Token::None).to(Literal::None))
+        .map_with_span(|span, literal| Spanned(span, literal))
         .labelled("Literal")
     }
 }
 
+fn unary_foldr(operator: Spanned<UnaryOperator>, expr: Spanned<Expr>) -> Spanned<Expr> {
+    let span = (operator.1.start)..(expr.1.end);
+    Spanned(Expr::UnaryOperator(operator, Box::new(expr)), span)
+}
+
 impl Expr {
-    fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> + Clone {
+    fn parser<'a>(
+    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> + Clone {
         recursive(|_expr| {
-            let atom = Literal::parser(_expr.clone())
-                .map(Expr::Literal)
-                .boxed()
-                .or(IdentAst::parser().map(Expr::Ident))
+            let atom = Literal::parser(/*expr.clone()*/)
+                .map_with_span(|literal, span| Spanned(Expr::Literal(literal), span))
                 .boxed();
             let unary = UnaryOperator::parser()
                 .repeated()
                 .then(atom)
-                .foldr(|op, expr| Expr::UnaryOperator(op, Box::new(expr)));
+                .foldr(unary_foldr);
             let bin_parsers = [
                 BinaryOperator::mul_parser_or_modulo().boxed(),
                 BinaryOperator::add_parser().boxed(),
@@ -121,7 +130,11 @@ impl Expr {
                 .clone()
                 .then(ComparisonOperators::parser().then(binary).repeated())
                 .foldl(|left, (op, right)| {
-                    Expr::ComparisonOperators(Box::new(left), op, Box::new(right))
+                    let span = (left.1.start)..(right.1.end);
+                    Spanned(
+                        Expr::ComparisonOperators(Box::new(left), op, Box::new(right)),
+                        span,
+                    )
                 })
                 .boxed();
             for parser in bin_parsers {
@@ -129,16 +142,19 @@ impl Expr {
                     .clone()
                     .then(parser.then(binary).repeated())
                     .foldl(|left, (op, right)| {
-                        Expr::BinaryOperator(Box::new(left), op, Box::new(right))
+                        let span = (left.1.start)..(right.1.end);
+                        Spanned(
+                            Expr::BinaryOperator(Box::new(left), op, Box::new(right)),
+                            span,
+                        )
                     })
                     .boxed();
             }
             binary
         })
-        .labelled("Expr")
     }
 }
-
+/*
 impl Let {
     pub fn parser<'a>(
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>>,
@@ -161,16 +177,18 @@ impl Let {
             .labelled("Let")
     }
 }
-
+*/
 impl IdentAst {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>>
+    {
         select! {
          Token::Ident(i) => IdentAst {name: i.to_string()}
         }
+        .map_with_span(|span, ident| Spanned(span, ident))
         .labelled("IdentAst")
     }
 }
-
+/*
 impl Kind {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         Kind::union_parser()
@@ -555,3 +573,4 @@ impl StuffThatCanGoIntoReassignment {
             .or(IdentAst::parser().map(StuffThatCanGoIntoReassignment::IdentAst))
     }
 }
+*/
