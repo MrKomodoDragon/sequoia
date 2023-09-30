@@ -4,6 +4,22 @@ use std::{
     println, todo,
 };
 
+/*
+ * fn lower type(expr) {
+ * match expr {
+ * Integer => Kind::Int
+ * Float => Kind::Float
+ * String => Kind::String
+ * }
+ * }
+ *
+ * if expected.type == got.type {
+ * execute logic
+ * }
+ *
+ * else {raise error}
+ * */
+
 fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>) {
     match (let_stmt.kind, let_stmt.rhs.clone()) {
         (Kind::Int, Expr::Literal(i)) => {
@@ -67,9 +83,9 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
 }
 use crate::ast::*;
 pub fn interpret(tree: Root) {
+    let mut vars: HashMap<String, HashMap<String, Value>> =
+        HashMap::from([("globals".to_string(), HashMap::from([]))]);
     for i in tree.statements {
-        let mut vars: HashMap<String, HashMap<String, Value>> =
-            HashMap::from([("globals".to_string(), HashMap::from([]))]);
         match i {
             crate::ast::Statement::Let(i) => eval_let_statement(i, &mut vars),
             _ => todo!(),

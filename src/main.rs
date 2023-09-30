@@ -1,7 +1,7 @@
 #![warn(clippy::all, clippy::pedantic)]
 #![warn(clippy::cargo)]
 use logos::Logos;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 use crate::interpreter::expr_eval;
 use crate::interpreter::interpret;
@@ -14,7 +14,7 @@ mod parser;
 fn main() {
     let str = String::from(
         r#" let x: Int = 9+9;
-            let y: Int = 8;
+            let y: Int = 9*9*9*9*9*9*9*9*9*9*9*9;
     "#,
     );
     let now = Instant::now();
@@ -26,6 +26,5 @@ fn main() {
     let intrepreted = interpret(ast_.as_ref().unwrap().clone());
     println!("{:#?}", intrepreted);
     let later = Instant::now() - now;
-
-   
+    println!("{:#?}", later);
 }
