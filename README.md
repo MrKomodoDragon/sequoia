@@ -1,2 +1,2 @@
 # sequoia
-A simple, gradually typed, fast language that is being developed constantly
+A simple, statically typed, fast language that is being developed constantly
