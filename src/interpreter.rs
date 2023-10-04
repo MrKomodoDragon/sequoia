@@ -3,7 +3,6 @@ use std::{
     ops::{Add, Div, Mul, Neg, Not, Rem, Sub},
     println, todo,
 };
-
 /*
  * fn lower type(expr) {
  * match expr {
@@ -21,28 +20,42 @@ use std::{
  * */
 
 fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>) {
+    print!(
+        "at the beginning of the eval of let stmt: {:#?}",
+        &vars_dict
+    );
     match (let_stmt.kind, let_stmt.rhs.clone()) {
-        (Kind::Int, Expr::Literal(i)) => {
-            let eval_literaled = literal_eval(i);
-            println!("{:#?}", vars_dict);
-            if let Value::Int(integer) = eval_literaled {
-                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-                    inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
-                }
-                println!("{:#?}", vars_dict);
-            }
+        (Kind::Int, Expr::Literal(i)) => {} /*{
+        println!("evaling let stmt with integer");
+        let eval_literaled = literal_eval(i);
+        if let Value::Int(integer) = eval_literaled {
+        if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+        inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
         }
+        println!("Let stmt integer after: {:#?}", vars_dict);
+        }
+        }*/
         (Kind::Int, Expr::BinaryOperator(expr1, op, expr2)) => {
+            println!("evaling let stmt with binop");
             let evaled_expr = expr_eval(let_stmt.rhs.clone());
             if let Value::Int(integer) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-                    inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
+                    inner_hashmap.insert(let_stmt.name.name, evaled_expr);
                 }
-                println!("{:#?}", vars_dict);
+                println!("let stmt binops after: {:#?}", vars_dict);
             }
         }
-        (Kind::Int, Expr::UnaryOperator(_, _)) => todo!(),
-        (Kind::Int, Expr::ComparisonOperators(_, _, _)) => todo!(),
+        (Kind::Int, Expr::UnaryOperator(op, expr)) => {
+            let evaled_expr = expr_eval(let_stmt.rhs.clone());
+            if let Value::Int(integer) = evaled_expr {
+                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+                    inner_hashmap.insert(let_stmt.name.name, evaled_expr);
+                }
+            }
+        }
+        (Kind::Int, Expr::ComparisonOperators(_, _, _)) => {
+            panic!("You have declared the type as Kind::Int but your ");
+        }
         (Kind::Int, Expr::Ident(_)) => todo!(),
         (Kind::Float, Expr::Literal(_)) => todo!(),
         (Kind::Float, Expr::BinaryOperator(_, _, _)) => todo!(),
@@ -179,9 +192,9 @@ impl Not for Value {
     type Output = Value;
 }
 
-pub(crate) fn expr_eval(input: Expr) -> Value {
+pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
     match input {
-        Expr::Literal(literal) => literal_eval(literal),
+        Expr::Literal(literal) => todo!(), /*literal_eval(literal)*/
         Expr::BinaryOperator(expr, op, expr2) => match op {
             BinaryOperator::Add => expr_eval(*expr) + expr_eval(*expr2),
             BinaryOperator::Sub => expr_eval(*expr) - expr_eval(*expr2),
@@ -209,9 +222,9 @@ pub(crate) fn expr_eval(input: Expr) -> Value {
                 }
             }
         },
-        Expr::UnaryOperator(op, expr) => match op {
-            UnaryOperator::Neg => -(expr_eval(*expr)),
-            UnaryOperator::NOT => !(expr_eval(*expr)),
+        Expr::UnaryOperator(op, expr) => match op.0 {
+            UnaryOperator::Neg => todo!(), /*-(expr_eval(*expr)),*/
+            UnaryOperator::NOT => todo!(),
         },
         Expr::ComparisonOperators(expr, op, expr2) => match op {
             ComparisonOperators::GreaterThan => Value::Bool(expr_eval(*expr) > expr_eval(*expr2)),
