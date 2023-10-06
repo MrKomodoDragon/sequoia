@@ -24,13 +24,13 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
         "at the beginning of the eval of let stmt: {:#?}",
         &vars_dict
     );
-    match (let_stmt.kind, let_stmt.rhs.clone()) {
+    match (let_stmt.kind.0, let_stmt.rhs.0.clone()) {
         (Kind::Int, Expr::Literal(i)) => {} /*{
         println!("evaling let stmt with integer");
         let eval_literaled = literal_eval(i);
         if let Value::Int(integer) = eval_literaled {
         if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-        inner_hashmap.insert(let_stmt.name.name, expr_eval(let_stmt.rhs.clone()));
+        inner_hashmap.insert(let_stmt.0.name.name, expr_eval(let_stmt.rhs.clone()));
         }
         println!("Let stmt integer after: {:#?}", vars_dict);
         }
@@ -40,7 +40,7 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
             let evaled_expr = expr_eval(let_stmt.rhs.clone());
             if let Value::Int(integer) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-                    inner_hashmap.insert(let_stmt.name.name, evaled_expr);
+                    inner_hashmap.insert(let_stmt.name.0.name, evaled_expr);
                 }
                 println!("let stmt binops after: {:#?}", vars_dict);
             }
@@ -49,7 +49,7 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
             let evaled_expr = expr_eval(let_stmt.rhs.clone());
             if let Value::Int(integer) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
-                    inner_hashmap.insert(let_stmt.name.name, evaled_expr);
+                    // inner_hashmap.insert(let_stmt.name.0name, evaled_expr);
                 }
             }
         }
@@ -99,8 +99,8 @@ pub fn interpret(tree: Root) {
     let mut vars: HashMap<String, HashMap<String, Value>> =
         HashMap::from([("globals".to_string(), HashMap::from([]))]);
     for i in tree.statements {
-        match i {
-            crate::ast::Statement::Let(i) => eval_let_statement(i, &mut vars),
+        match i.0 {
+            crate::ast::Statement::Let(i) => eval_let_statement(i.0, &mut vars),
             _ => todo!(),
         }
     }
@@ -193,9 +193,9 @@ impl Not for Value {
 }
 
 pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
-    match input {
-        Expr::Literal(literal) => todo!(), /*literal_eval(literal)*/
-        Expr::BinaryOperator(expr, op, expr2) => match op {
+    match input.0 {
+        Expr::Literal(literal) => literal_eval(literal),
+        Expr::BinaryOperator(expr, op, expr2) => match op.0 {
             BinaryOperator::Add => expr_eval(*expr) + expr_eval(*expr2),
             BinaryOperator::Sub => expr_eval(*expr) - expr_eval(*expr2),
             BinaryOperator::Mul => expr_eval(*expr) * expr_eval(*expr2),
@@ -226,7 +226,7 @@ pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
             UnaryOperator::Neg => todo!(), /*-(expr_eval(*expr)),*/
             UnaryOperator::NOT => todo!(),
         },
-        Expr::ComparisonOperators(expr, op, expr2) => match op {
+        Expr::ComparisonOperators(expr, op, expr2) => match op.0 {
             ComparisonOperators::GreaterThan => Value::Bool(expr_eval(*expr) > expr_eval(*expr2)),
             ComparisonOperators::LessThan => Value::Bool(expr_eval(*expr) < expr_eval(*expr2)),
             ComparisonOperators::GreaterOrEqualTo => {
@@ -240,24 +240,24 @@ pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
     }
 }
 
-fn literal_eval(input: Literal) -> Value {
-    match input {
+fn literal_eval(input: Spanned<Literal>) -> Value {
+    match input.0 {
         Literal::Integer(i) => Value::Int(i),
         Literal::Str(i) => Value::Str(i),
         Literal::Float(i) => Value::Float(i),
-        Literal::List(list) => {
-            let mut evaled_exprs = Vec::new();
-            for i in list {
-                let i_evaled = expr_eval(i);
-                evaled_exprs.push(i_evaled);
-            }
-            return Value::List(evaled_exprs);
+        Literal::List(list) => todo!(), /* {
+        let mut evaled_exprs = Vec::new();
+        for i in list {
+        let i_evaled = expr_eval(i);
+        evaled_exprs.push(i_evaled);
         }
+        return Value::List(evaled_exprs);
+        }*/
         Literal::Bool(i) => Value::Bool(i),
-        Literal::ArrrayIndex(i) => Value::ArrrayIndex {
-            arr_name: i.arr_name.name,
-            index: Box::new(expr_eval(*(i.index))),
-        },
+        Literal::ArrrayIndex(i) => todo!(), //Value::ArrrayIndex {
+        //arr_name: i.arr_name.name,
+        //index: Box::new(expr_eval(*(i.index))),
+        //},
         Literal::None => Value::None,
     }
 }

@@ -26,11 +26,11 @@ pub struct FunctionDecl {
 
 #[derive(Debug, Clone)]
 pub struct Let {
-    pub name: LetName,
+    pub name: Spanned<LetName>,
     pub mutable: bool,
-    pub kind: Kind, //if you're wondering why it's not named something with the word type in it, blame sampersand.
-    pub assign_type: AssignOp,
-    pub rhs: Expr,
+    pub kind: Spanned<Kind>, //if you're wondering why it's not named something with the word type in it, blame sampersand.
+    pub assign_type: Spanned<AssignOp>,
+    pub rhs: Spanned<Expr>,
 }
 
 #[derive(Clone, Debug)]
@@ -53,7 +53,7 @@ pub enum Kind {
     NoneType,
     List {
         kind: Box<Kind>,
-        size: Option<SeparateNumberParserBecauseIdkWhy>,
+        size: Option<Spanned<SeparateNumberParserBecauseIdkWhy>>,
     },
     Union(Vec<Kind>),
     Optional(Box<Kind>),
@@ -98,7 +98,7 @@ pub enum Expr {
 }
 #[derive(Debug, Clone)]
 pub enum Statement {
-    Let(Let),
+    Let(Spanned<Let>),
     FnDecl(FunctionDecl),
     Return(Spanned<Return>),
     FnCall(FnCall),
@@ -113,7 +113,7 @@ pub enum Statement {
 
 #[derive(Debug, Clone)]
 pub struct Root {
-    pub statements: Vec<Statement>,
+    pub statements: Vec<Spanned<Statement>>,
 }
 
 #[derive(Debug, Clone)]

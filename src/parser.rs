@@ -7,10 +7,10 @@ use std::str::FromStr;
 
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, std::ops::Range<usize>)>,
-) -> Result<Spanned<Expr>, Vec<Simple<Token<'a>>>> {
+) -> Result<Spanned<Root>, Vec<Simple<Token<'a>>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
     let stream = Stream::from_iter(span, tokens.iter().cloned());
-    let parser = Expr::parser();
+    let parser = Root::parser();
     parser.parse(stream)
 }
 // impl Return {
@@ -157,7 +157,7 @@ impl Expr {
 
 impl Let {
     pub fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>>,
+        expr: impl chumsky::Parser<Token<'a>, Spanned<Expr>, Error = Simple<Token<'a>>>,
     ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::Let)
             .ignore_then(LetName::parser())
@@ -189,13 +189,13 @@ impl IdentAst {
         .labelled("IdentAst")
     }
 }
-/*
+
 impl Kind {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         Kind::union_parser()
             .or(Kind::optional_parser())
             .or(Kind::list_parser())
-            .or(Kind::basic_parser())
+            .or(Kind::basic_parser()).map_with_span(|span, tok| Spanned(span, tok))
             .labelled("Kind::main_parser")
     }
     pub fn basic_parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
@@ -245,10 +245,10 @@ impl Kind {
 
 impl Statement {
     pub fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone + 'a,
-    ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+        expr: impl chumsky::Parser<Token<'a>, Spanned<Expr>, Error = Simple<Token<'a>>> + Clone + 'a,
+    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         recursive(|stmt| {
-            ReAss::parser()
+            /*ReAss::parser()
                 .map(Statement::ReAssignment)
                 .or(FunctionDecl::parser(stmt.clone()).map(Statement::FnDecl))
                 .or(Let::parser(expr.clone()).map(Statement::Let))
@@ -259,22 +259,22 @@ impl Statement {
                 .or(Break::parser().map(Statement::Break))
                 .or(Continue::parser().map(Statement::Continue))
                 .or(ImportStmt::parser().map(Statement::Import))
-                .or(Module::parser(stmt).map(Statement::Module))
-        })
+                .or(Module::parser(stmt).map(Statement::Module))*/ Let::parser(expr).map(Statement::Let)
+        }).map_with_span(|span, tok| Spanned(span, tok))
         .labelled("Statement")
     }
 }
 
 impl Root {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         Statement::parser(Expr::parser())
             .repeated()
             .then_ignore(end())
-            .map(|stmts| Root { statements: stmts })
+            .map(|stmts| Root { statements: stmts }).map_with_span(|span, tok| Spanned(span, tok))
             .labelled("Root")
     }
 }
-
+/*
 impl Arg {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         IdentAst::parser()
@@ -422,9 +422,9 @@ impl Kwarg {
             .labelled("Kwarg")
     }
 }
-
+*/
 impl LetName {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         filter_map(|span, token| {
             if let Token::Ident(ident) = token {
                 Ok(LetName {
@@ -437,22 +437,22 @@ impl LetName {
                     Some(token),
                 ))
             }
-        })
+        }).map_with_span(|span, tok| Spanned(span, tok))
         .labelled("LetName")
     }
 }
 
 impl AssignOp {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         just(Token::Equal)
             .to(AssignOp::Assign)
             .or(just([Token::Plus, Token::Equal]).to(AssignOp::Add))
             .or(just([Token::Subtract, Token::Equal]).to(AssignOp::Subtract))
             .or(just([Token::Multiply, Token::Equal]).to(AssignOp::Multiply))
-            .or(just([Token::Divide, Token::Equal]).to(AssignOp::Divide))
+            .or(just([Token::Divide, Token::Equal]).to(AssignOp::Divide)).map_with_span(|span, tok| Spanned(span, tok))
     }
 }
-
+/*
 impl Break {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         just(Token::Break).to(Break {})
@@ -544,15 +544,15 @@ impl ReAss {
             })
     }
 }
-
+*/
 impl SeparateNumberParserBecauseIdkWhy {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
+    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         select! {
             Token::Integer(i) => SeparateNumberParserBecauseIdkWhy(i64::from_str(i).unwrap())
-        }
+        }.map_with_span(|span, tok| Spanned(span, tok))
     }
 }
-
+/*
 impl ArrayIndex {
     pub fn parser<'a>(
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
