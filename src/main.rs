@@ -1,12 +1,13 @@
 #![warn(clippy::all, clippy::pedantic)]
 #![warn(clippy::cargo)]
-use logos::Logos;
-use std::time::{Duration, Instant};
-
+use crate::ast::*;
 use crate::interpreter::expr_eval;
 use crate::interpreter::interpret;
+use crate::interpreter::lower_type;
 use crate::lexer::Token;
 use crate::parser::parse;
+use logos::Logos;
+use std::time::{Duration, Instant};
 mod ast;
 mod interpreter;
 mod lexer;
@@ -26,4 +27,8 @@ fn main() {
     interpret(ast_.unwrap().0);
     let later = Instant::now() - now;
     println!("{:#?}", later);
+    println!(
+        "{}",
+        lower_type(Expr::Literal(Spanned(0..7, Literal::Integer(9))))
+    )
 }

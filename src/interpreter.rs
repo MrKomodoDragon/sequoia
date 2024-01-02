@@ -19,6 +19,17 @@ use std::{
  * else {raise error}
  * */
 
+fn lower_type(expr: Expr) -> Kind {
+    match expr {
+        Expr::Literal(i) => match i.0 {
+            Literal::Integer(_) => Kind::Int,
+            Literal::Str(_) => Kind::Str,
+            _ => todo!(),
+        },
+        _ => todo!(),
+    }
+}
+
 fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<String, Value>>) {
     print!(
         "at the beginning of the eval of let stmt: {:#?}",
