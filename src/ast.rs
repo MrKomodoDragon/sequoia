@@ -94,7 +94,7 @@ pub enum Expr {
         Spanned<ComparisonOperators>,
         Box<Spanned<Expr>>,
     ),
-    Ident(IdentAst),
+    Ident(Spanned<IdentAst>),
 }
 #[derive(Debug, Clone)]
 pub enum Statement {

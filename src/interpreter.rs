@@ -37,7 +37,7 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
         }*/
         (Kind::Int, Expr::BinaryOperator(expr1, op, expr2)) => {
             println!("evaling let stmt with binop");
-            let evaled_expr = expr_eval(let_stmt.rhs.clone());
+            let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
             if let Value::Int(integer) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
                     inner_hashmap.insert(let_stmt.name.0.name, evaled_expr);
@@ -46,7 +46,7 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
             }
         }
         (Kind::Int, Expr::UnaryOperator(op, expr)) => {
-            let evaled_expr = expr_eval(let_stmt.rhs.clone());
+            let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
             if let Value::Int(integer) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
                     // inner_hashmap.insert(let_stmt.name.0name, evaled_expr);
@@ -192,18 +192,18 @@ impl Not for Value {
     type Output = Value;
 }
 
-pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
+pub(crate) fn expr_eval(input: Spanned<Expr>, vars_dict: &mut HashMap<String, HashMap<String, Value>>) -> Value {
     match input.0 {
         Expr::Literal(literal) => literal_eval(literal),
-        Expr::BinaryOperator(expr, op, expr2) => match op.0 {
-            BinaryOperator::Add => expr_eval(*expr) + expr_eval(*expr2),
-            BinaryOperator::Sub => expr_eval(*expr) - expr_eval(*expr2),
-            BinaryOperator::Mul => expr_eval(*expr) * expr_eval(*expr2),
-            BinaryOperator::Div => expr_eval(*expr) / expr_eval(*expr2),
-            BinaryOperator::Modulus => expr_eval(*expr) % expr_eval(*expr2),
+        Expr::BinaryOperator(expr,  op, expr2) => match op.0 {
+            BinaryOperator::Add => expr_eval(*expr, vars_dict) + expr_eval(*expr2, vars_dict),
+            BinaryOperator::Sub => expr_eval(*expr, vars_dict) - expr_eval(*expr2, vars_dict),
+            BinaryOperator::Mul => expr_eval(*expr, vars_dict) * expr_eval(*expr2, vars_dict),
+            BinaryOperator::Div => expr_eval(*expr, vars_dict) / expr_eval(*expr2, vars_dict),
+            BinaryOperator::Modulus => expr_eval(*expr, vars_dict) % expr_eval(*expr2, vars_dict),
             BinaryOperator::AND => {
-                let evaled_expr1 = expr_eval(*expr);
-                let evaled_expr2 = expr_eval(*expr2);
+                let evaled_expr1 = expr_eval(*expr, vars_dict);
+                let evaled_expr2 = expr_eval(*expr2, vars_dict);
                 println!("{:?}", evaled_expr1);
                 println!("{:?}", evaled_expr2);
                 match (evaled_expr1, evaled_expr2) {
@@ -212,8 +212,8 @@ pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
                 }
             }
             BinaryOperator::OR => {
-                let evaled_expr1 = expr_eval(*expr);
-                let evaled_expr2 = expr_eval(*expr2);
+                let evaled_expr1 = expr_eval(*expr, vars_dict);
+                let evaled_expr2 = expr_eval(*expr2, vars_dict);
                 println!("{:?}", evaled_expr1);
                 println!("{:?}", evaled_expr2);
                 match (evaled_expr1, evaled_expr2) {
@@ -227,16 +227,20 @@ pub(crate) fn expr_eval(input: Spanned<Expr>) -> Value {
             UnaryOperator::NOT => todo!(),
         },
         Expr::ComparisonOperators(expr, op, expr2) => match op.0 {
-            ComparisonOperators::GreaterThan => Value::Bool(expr_eval(*expr) > expr_eval(*expr2)),
-            ComparisonOperators::LessThan => Value::Bool(expr_eval(*expr) < expr_eval(*expr2)),
+            ComparisonOperators::GreaterThan => Value::Bool(expr_eval(*expr, vars_dict) > expr_eval(*expr2, vars_dict)),
+            ComparisonOperators::LessThan => Value::Bool(expr_eval(*expr, vars_dict) < expr_eval(*expr2, vars_dict)),
             ComparisonOperators::GreaterOrEqualTo => {
-                Value::Bool(expr_eval(*expr) >= expr_eval(*expr2))
+                Value::Bool(expr_eval(*expr, vars_dict) >= expr_eval(*expr2, vars_dict))
             }
             ComparisonOperators::LessThanOrEqualTo => {
-                Value::Bool(expr_eval(*expr) <= expr_eval(*expr2))
+                Value::Bool(expr_eval(*expr, vars_dict) <= expr_eval(*expr2, vars_dict))
             }
         },
-        Expr::Ident(i) => Value::Ident(i.name),
+        Expr::Ident(i) => {
+            let string = i.0.name;
+            let val = vars_dict.get("globals").unwrap().get(string.as_str()).unwrap();
+            val.clone()
+        },
     }
 }
 
