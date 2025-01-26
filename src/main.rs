@@ -14,9 +14,9 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" let x: Int = 9+9;
-            let y: Int = 9*9*9*9*9*9*9*9*9*9*9*9;
-            let z: Int = x*9;
+        r#" let x: Float = -(9.0+9.982372047);
+            let y: Int = 5+4*2/2;
+            let z: Float = x*9;
     "#,
     );
     let now = Instant::now();
@@ -25,11 +25,11 @@ fn main() {
     println!("{:#?}", lex);
     let ast_ = parse(lex);
     println!("{:#?}", ast_.as_ref().unwrap());
-    //interpret(ast_.unwrap().0);
-    //let later = Instant::now() - now;
-    //println!("{:#?}", later);
     println!(
         "{}",
         lower_type(Expr::Literal(Spanned(0..7, Literal::Integer(9))))
     )
+    interpret(ast_.unwrap().0);
+    let later = Instant::now() - now;
+    println!("{:#?}", later);
 }
