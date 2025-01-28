@@ -556,14 +556,14 @@ impl SeparateNumberParserBecauseIdkWhy {
 }
 impl ArrayIndex {
     pub fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
+        expr: impl chumsky::Parser<Token<'a>, Spanned<Expr>, Error = Simple<Token<'a>>> + Clone,
     ) -> impl chumsky::Parser<Token<'a>, Self, Error = Simple<Token<'a>>> {
         IdentAst::parser()
             .then(expr.delimited_by(just(Token::BracketOpen), just(Token::BracketClose)))
-            .map(|(name, index)| ArrayIndex {
-                index: Box::new(index),
-                arr_name: name,
-            })
+            .map_with_span(|span, index| Spanned(ArrayIndex {
+                index: Box::new(span.1),
+                arr_name: span.0,
+            }, index))
             .labelled("ArrayIndex")
     }
 }

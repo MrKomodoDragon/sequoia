@@ -209,7 +209,7 @@ pub struct SeparateNumberParserBecauseIdkWhy(pub i64);
 #[derive(Debug, Clone)]
 pub struct ArrayIndex {
     pub arr_name: Spanned<IdentAst>,
-    pub index: Box<Expr>,
+    pub index: Box<Spanned<Expr>>,
 }
 #[derive(Debug, Clone)]
 pub enum StuffThatCanGoIntoReassignment {
