@@ -79,7 +79,15 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
             } else {
                 panic!("Evaluted expression is not a float!");
             }},
-        (Kind::Float, Expr::UnaryOperator(_, _)) => todo!(),
+        (Kind::Float, Expr::UnaryOperator(_, _)) => {let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
+            if let Value::Float(float) = evaled_expr {
+                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+                    inner_hashmap.insert(let_stmt.name.0.name, evaled_expr);
+                }
+                println!("let stmt binops after: {:#?}", vars_dict);
+            } else {
+                panic!("Evaluted expression is not a float!");
+            }},
         (Kind::Float, Expr::ComparisonOperators(_, _, _)) => todo!(),
         (Kind::Float, Expr::Ident(_)) => todo!(),
         (Kind::Str, Expr::Literal(_)) => todo!(),

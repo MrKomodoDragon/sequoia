@@ -112,11 +112,11 @@ fn unary_foldr(operator: Spanned<UnaryOperator>, expr: Spanned<Expr>) -> Spanned
 impl Expr {
     fn parser<'a>(
     ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> + Clone {
-        recursive(|_expr| {
+        recursive(|expr| {
             let literal = Literal::parser(/*expr.clone()*/)
             .map_with_span(|literal, span| Spanned(Expr::Literal(literal), span));
             let ident = IdentAst::parser().map_with_span(|ident, span| Spanned(Expr::Ident(ident), span));
-            let atom = literal.or(ident)
+            let atom = literal.or(ident).or(expr.delimited_by(just(Token::ParenOpen), just(Token::ParenClose)))
                 .boxed();
             let unary = UnaryOperator::parser()
                 .repeated()

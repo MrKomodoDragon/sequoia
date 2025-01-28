@@ -14,9 +14,9 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" let x: Float = -(9.0+9.982372047);
+        r#" let x: Int = 5*(2+1);
             let y: Int = 5+4*2/2;
-            let z: Float = x*9;
+            let z: Int = x*9;
     "#,
     );
     let now = Instant::now();
