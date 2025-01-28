@@ -74,7 +74,7 @@ impl UnaryOperator {
 }
 
 impl Literal {
-    fn parser<'a>(/* expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,*/
+    fn parser<'a>( expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
     ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
         filter_map(|span, token| match token {
             Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
@@ -92,12 +92,12 @@ impl Literal {
                 Some(token),
             )),
         })
-        /*.or(expr
+        .or(expr
             .clone()
             .separated_by(just(Token::Comma))
             .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
-            .map(|exprs| Literal::List(exprs)))*/
-        /*.or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))*/
+            .map(|exprs| Literal::List(exprs)))
+        .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))
         .or(just(Token::None).to(Literal::None))
         .map_with_span(|span, literal| Spanned(span, literal))
         .labelled("Literal")
@@ -113,7 +113,7 @@ impl Expr {
     fn parser<'a>(
     ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> + Clone {
         recursive(|expr| {
-            let literal = Literal::parser(/*expr.clone()*/)
+            let literal = Literal::parser(expr.clone())
             .map_with_span(|literal, span| Spanned(Expr::Literal(literal), span));
             let ident = IdentAst::parser().map_with_span(|ident, span| Spanned(Expr::Ident(ident), span));
             let atom = literal.or(ident).or(expr.delimited_by(just(Token::ParenOpen), just(Token::ParenClose)))
@@ -554,7 +554,6 @@ impl SeparateNumberParserBecauseIdkWhy {
         }.map_with_span(|span, tok| Spanned(span, tok))
     }
 }
-/*
 impl ArrayIndex {
     pub fn parser<'a>(
         expr: impl chumsky::Parser<Token<'a>, Expr, Error = Simple<Token<'a>>> + Clone,
@@ -576,4 +575,4 @@ impl StuffThatCanGoIntoReassignment {
             .or(IdentAst::parser().map(StuffThatCanGoIntoReassignment::IdentAst))
     }
 }
-*/
+

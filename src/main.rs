@@ -26,10 +26,10 @@ fn main() {
     let ast_ = parse(lex);
     println!("{:#?}", ast_.as_ref().unwrap());
     println!(
-        "{}",
-        lower_type(Expr::Literal(Spanned(0..7, Literal::Integer(9))))
-    )
+        "{:#?}",
+        lower_type(Expr::Literal(Spanned(Literal::Integer(9), 0..7)))
+    );
     interpret(ast_.unwrap().0);
     let later = Instant::now() - now;
-    println!("{:#?}", later);
+    //println!("{:#?}", later);
 }

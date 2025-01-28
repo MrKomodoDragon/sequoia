@@ -208,7 +208,7 @@ pub struct SeparateNumberParserBecauseIdkWhy(pub i64);
 
 #[derive(Debug, Clone)]
 pub struct ArrayIndex {
-    pub arr_name: IdentAst,
+    pub arr_name: Spanned<IdentAst>,
     pub index: Box<Expr>,
 }
 #[derive(Debug, Clone)]
