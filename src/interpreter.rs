@@ -291,14 +291,14 @@ fn literal_eval(input: Spanned<Literal>) -> Value {
         Literal::Integer(i) => Value::Int(i),
         Literal::Str(i) => Value::Str(i),
         Literal::Float(i) => Value::Float(i),
-        Literal::List(list) => todo!(), /* {
+        Literal::List(list) => {
         let mut evaled_exprs = Vec::new();
         for i in list {
         let i_evaled = expr_eval(i);
         evaled_exprs.push(i_evaled);
         }
         return Value::List(evaled_exprs);
-        }*/
+        }
         Literal::Bool(i) => Value::Bool(i),
         Literal::ArrrayIndex(i) => todo!(), //Value::ArrrayIndex {
         //arr_name: i.arr_name.name,

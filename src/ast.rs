@@ -38,9 +38,9 @@ pub enum Literal {
     Integer(i64),
     Str(String),
     Float(f64),
-    List(Vec<Expr>),
+    List(Vec<Spanned<Expr>>),
     Bool(bool),
-    ArrrayIndex(ArrayIndex),
+    ArrrayIndex(Spanned<ArrayIndex>),
     None,
 }
 
@@ -213,6 +213,6 @@ pub struct ArrayIndex {
 }
 #[derive(Debug, Clone)]
 pub enum StuffThatCanGoIntoReassignment {
-    IdentAst(IdentAst),
-    ArrayIndex(ArrayIndex),
+    IdentAst(Spanned<IdentAst>),
+    ArrayIndex(Spanned<ArrayIndex>),
 }
