@@ -70,7 +70,8 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
         }
         (Kind::Int, Expr::Ident(_)) => todo!(),
         (Kind::Float, Expr::Literal(_)) => todo!(),
-        (Kind::Float, Expr::BinaryOperator(expr1, op, expr2)) => {let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
+        (Kind::Float, Expr::BinaryOperator(expr1, op, expr2)) => {
+            let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
             if let Value::Float(float) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
                     inner_hashmap.insert(let_stmt.name.0.name, evaled_expr);
@@ -78,8 +79,10 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
                 println!("let stmt binops after: {:#?}", vars_dict);
             } else {
                 panic!("Evaluted expression is not a float!");
-            }},
-        (Kind::Float, Expr::UnaryOperator(_, _)) => {let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
+            }
+        }
+        (Kind::Float, Expr::UnaryOperator(_, _)) => {
+            let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
             if let Value::Float(float) = evaled_expr {
                 if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
                     inner_hashmap.insert(let_stmt.name.0.name, evaled_expr);
@@ -87,7 +90,8 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
                 println!("let stmt binops after: {:#?}", vars_dict);
             } else {
                 panic!("Evaluted expression is not a float!");
-            }},
+            }
+        }
         (Kind::Float, Expr::ComparisonOperators(_, _, _)) => todo!(),
         (Kind::Float, Expr::Ident(_)) => todo!(),
         (Kind::Str, Expr::Literal(_)) => todo!(),
@@ -105,7 +109,15 @@ fn eval_let_statement(let_stmt: Let, vars_dict: &mut HashMap<String, HashMap<Str
         (Kind::NoneType, Expr::UnaryOperator(_, _)) => todo!(),
         (Kind::NoneType, Expr::ComparisonOperators(_, _, _)) => todo!(),
         (Kind::NoneType, Expr::Ident(_)) => todo!(),
-        (Kind::List { kind, size }, Expr::Literal(_)) => todo!(),
+        (Kind::List { kind, size }, Expr::Literal(i)) => {
+            let evaled_expr = expr_eval(let_stmt.rhs.clone(), vars_dict);
+            if let Value::List(ref list) = evaled_expr {
+                if let Some(inner_hashmap) = vars_dict.get_mut(&String::from("globals")) {
+                    inner_hashmap.insert(let_stmt.name.0.name, evaled_expr.clone());
+                }
+                println!("{:#?}", list.clone());
+            }
+        }
         (Kind::List { kind, size }, Expr::BinaryOperator(_, _, _)) => todo!(),
         (Kind::List { kind, size }, Expr::UnaryOperator(_, _)) => todo!(),
         (Kind::List { kind, size }, Expr::ComparisonOperators(_, _, _)) => todo!(),
@@ -149,9 +161,9 @@ impl Sub for Value {
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Int(i), Value::Int(i2)) => Value::Int(i - i2),
-            (Value::Float(f), Value::Int(i)) => Value::Float(f-i as f64),
+            (Value::Float(f), Value::Int(i)) => Value::Float(f - i as f64),
             (Value::Int(i), Value::Float(f)) => Value::Float((i as f64) - f),
-            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1- f2),
+            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1 - f2),
             _ => todo!(),
         }
     }
@@ -163,9 +175,9 @@ impl Add for Value {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Int(i), Value::Int(i2)) => Value::Int(i + i2),
-            (Value::Float(f), Value::Int(i)) => Value::Float(f+i as f64),
-            (Value::Int(i), Value::Float(f)) => Value::Float(f+i as f64),
-            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1+f2),
+            (Value::Float(f), Value::Int(i)) => Value::Float(f + i as f64),
+            (Value::Int(i), Value::Float(f)) => Value::Float(f + i as f64),
+            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1 + f2),
             _ => {
                 panic!("Incompatible types are being added");
             }
@@ -178,9 +190,9 @@ impl Mul for Value {
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Int(i), Value::Int(i2)) => Value::Int(i * i2),
-            (Value::Float(f), Value::Int(i)) => Value::Float(f*i as f64),
-            (Value::Int(i), Value::Float(f)) => Value::Float(f*i as f64),
-            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1*f2),
+            (Value::Float(f), Value::Int(i)) => Value::Float(f * i as f64),
+            (Value::Int(i), Value::Float(f)) => Value::Float(f * i as f64),
+            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1 * f2),
             _ => todo!(),
         }
     }
@@ -191,9 +203,9 @@ impl Div for Value {
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Value::Int(i), Value::Int(i2)) => Value::Int(i / i2),
-            (Value::Float(f), Value::Int(i)) => Value::Float(f/i as f64),
-            (Value::Int(i), Value::Float(f)) => Value::Float(i as f64/f),
-            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1/f2),
+            (Value::Float(f), Value::Int(i)) => Value::Float(f / i as f64),
+            (Value::Int(i), Value::Float(f)) => Value::Float(i as f64 / f),
+            (Value::Float(f1), Value::Float(f2)) => Value::Float(f1 / f2),
             _ => todo!(),
         }
     }
@@ -216,7 +228,8 @@ impl Neg for Value {
             return Value::Int(-i);
         } else if let Value::Float(f) = self {
             return Value::Float(-f);
-        }{
+        }
+        {
             panic!("not an integer");
         }
     }
@@ -234,10 +247,13 @@ impl Not for Value {
     type Output = Value;
 }
 
-pub(crate) fn expr_eval(input: Spanned<Expr>, vars_dict: &mut HashMap<String, HashMap<String, Value>>) -> Value {
+pub(crate) fn expr_eval(
+    input: Spanned<Expr>,
+    vars_dict: &mut HashMap<String, HashMap<String, Value>>,
+) -> Value {
     match input.0 {
-        Expr::Literal(literal) => literal_eval(literal),
-        Expr::BinaryOperator(expr,  op, expr2) => match op.0 {
+        Expr::Literal(literal) => literal_eval(literal, vars_dict),
+        Expr::BinaryOperator(expr, op, expr2) => match op.0 {
             BinaryOperator::Add => expr_eval(*expr, vars_dict) + expr_eval(*expr2, vars_dict),
             BinaryOperator::Sub => expr_eval(*expr, vars_dict) - expr_eval(*expr2, vars_dict),
             BinaryOperator::Mul => expr_eval(*expr, vars_dict) * expr_eval(*expr2, vars_dict),
@@ -265,12 +281,16 @@ pub(crate) fn expr_eval(input: Spanned<Expr>, vars_dict: &mut HashMap<String, Ha
             }
         },
         Expr::UnaryOperator(op, expr) => match op.0 {
-            UnaryOperator::Neg => -(expr_eval(*expr, vars_dict)), 
+            UnaryOperator::Neg => -(expr_eval(*expr, vars_dict)),
             UnaryOperator::NOT => todo!(),
         },
         Expr::ComparisonOperators(expr, op, expr2) => match op.0 {
-            ComparisonOperators::GreaterThan => Value::Bool(expr_eval(*expr, vars_dict) > expr_eval(*expr2, vars_dict)),
-            ComparisonOperators::LessThan => Value::Bool(expr_eval(*expr, vars_dict) < expr_eval(*expr2, vars_dict)),
+            ComparisonOperators::GreaterThan => {
+                Value::Bool(expr_eval(*expr, vars_dict) > expr_eval(*expr2, vars_dict))
+            }
+            ComparisonOperators::LessThan => {
+                Value::Bool(expr_eval(*expr, vars_dict) < expr_eval(*expr2, vars_dict))
+            }
             ComparisonOperators::GreaterOrEqualTo => {
                 Value::Bool(expr_eval(*expr, vars_dict) >= expr_eval(*expr2, vars_dict))
             }
@@ -280,24 +300,31 @@ pub(crate) fn expr_eval(input: Spanned<Expr>, vars_dict: &mut HashMap<String, Ha
         },
         Expr::Ident(i) => {
             let string = i.0.name;
-            let val = vars_dict.get("globals").unwrap().get(string.as_str()).unwrap();
+            let val = vars_dict
+                .get("globals")
+                .unwrap()
+                .get(string.as_str())
+                .unwrap();
             val.clone()
-        },
+        }
     }
 }
 
-fn literal_eval(input: Spanned<Literal>) -> Value {
+fn literal_eval(
+    input: Spanned<Literal>,
+    vars_dict: &mut HashMap<String, HashMap<String, Value>>,
+) -> Value {
     match input.0 {
         Literal::Integer(i) => Value::Int(i),
         Literal::Str(i) => Value::Str(i),
         Literal::Float(i) => Value::Float(i),
         Literal::List(list) => {
-        let mut evaled_exprs = Vec::new();
-        for i in list {
-        let i_evaled = expr_eval(i);
-        evaled_exprs.push(i_evaled);
-        }
-        return Value::List(evaled_exprs);
+            let mut evaled_exprs = Vec::new();
+            for i in list {
+                let i_evaled = expr_eval(i, vars_dict);
+                evaled_exprs.push(i_evaled);
+            }
+            return Value::List(evaled_exprs);
         }
         Literal::Bool(i) => Value::Bool(i),
         Literal::ArrrayIndex(i) => todo!(), //Value::ArrrayIndex {
