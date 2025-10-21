@@ -1,22 +1,18 @@
 #![allow(dead_code)]
+use crate::lexer;
 #[allow(clippy::wildcard_imports)]
 use crate::{ast::*, lexer::Token};
-use chumsky::extra::Err;
-use chumsky::input::{ValueInput, Stream};
-use chumsky::span::SimpleSpan;
 use chumsky::Parser;
+use chumsky::input::{Stream, ValueInput};
+use chumsky::span::SimpleSpan;
 use chumsky::{error::Simple, prelude::*};
-use logos::Lexer;
 use std::str::FromStr;
-use crate::lexer;
-use logos::SpannedIter;
-use std::iter::Map;
 
 pub fn parse<'a>(
     tokens: Vec<(Token<'a>, SimpleSpan)>,
-) -> ParseResult<Spanned<Root>, Vec<Simple<Token<'a>>>> {
+) -> ParseResult<Spanned<Root>, Rich<'a, Token<'a>>> {
     let span = (&(tokens.last().unwrap()).1).clone();
-    let stream = Stream::from_iter(tokens) .map((span).into(), |(t, s): (_, _)| (t, s));
+    let stream = Stream::from_iter(tokens).map((0..span.end).into(), |(t, s): (_, _)| (t, s));
     let parser = Root::parser();
     parser.parse(stream)
 }
@@ -31,10 +27,10 @@ pub fn parse<'a>(
 //             .labelled("Return")
 //     }
 // }
-/*
+
 impl BinaryOperator {
-    pub fn mul_parser_or_modulo<'a, I>(
-    ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn mul_parser_or_modulo<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -56,8 +52,8 @@ impl BinaryOperator {
             .labelled("BinaryOperator, add_parser")
     }
 
-    pub fn and_or_parser<'a, I>(
-    ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn and_or_parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -98,42 +94,36 @@ impl UnaryOperator {
 
 impl Literal {
     fn parser<'a, I>(
-        expr: impl Parser<'a, I, Spanned<Expr>, extra::Err<Rich<'a, Token<'a>>>> + Clone,
+        expr: impl Parser<'a, I, Spanned<Expr>, extra::Err<Rich<'a, Token<'a>>>> + Clone + 'a,
     ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
-        try_map(|span, token| match token {
-            Token::Integer(int) => Ok(Literal::Integer(i64::from_str(int).unwrap())),
-            Token::Float(float) => Ok(Literal::Float(f64::from_str(float).unwrap())),
-            Token::Str(string) => Ok(Literal::Str(String::from(string))),
-            Token::Boolean(bool) => Ok(Literal::Bool(bool::from_str(bool).unwrap())),
-            _ => Err(Simple::expected_input_found(
-                span,
-                [
-                    Some(Token::Integer("...")),
-                    Some(Token::Float("...")),
-                    Some(Token::Str("...")),
-                    Some(Token::Boolean("...")),
-                ],
-                Some(token),
-            )),
-        })
+        select! {
+        Token::Integer(int) => Literal::Integer(i64::from_str(int).unwrap()),
+        Token::Float(int) => Literal::Float(f64::from_str(int).unwrap()),
+        Token::Str(string) => Literal::Str(String::from(string)),
+        Token::Boolean(bool) => Literal::Bool(bool::from_str(bool).unwrap()),
+                }
         .or(expr
             .clone()
             .separated_by(just(Token::Comma))
-            .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
-            .map(|exprs| Literal::List(exprs)))
+            .collect::<Vec<Spanned<Expr>>>()
+            .map(|exprs| Literal::List(exprs))
+            .delimited_by(just(Token::BracketOpen), just(Token::BracketClose)))
         .or(ArrayIndex::parser(expr.clone()).map(Literal::ArrrayIndex))
         //.or(just(Token::None).to(Literal::None))
-        .map_with(|span, literal| Spanned(span, literal))
+        .map_with(|span, literal| Spanned(span, literal.span()))
         .labelled("Literal")
     }
 }
 
 fn unary_foldr(operator: Spanned<UnaryOperator>, expr: Spanned<Expr>) -> Spanned<Expr> {
     let span = (operator.1.start)..(expr.1.end);
-    Spanned(Expr::UnaryOperator(operator, Box::new(expr)), span)
+    Spanned(
+        Expr::UnaryOperator(operator, Box::new(expr)),
+        SimpleSpan::from(span),
+    )
 }
 
 impl Expr {
@@ -143,15 +133,16 @@ impl Expr {
     {
         recursive(|expr| {
             let literal = Literal::parser(expr.clone())
-                .map_with(|literal, span| Spanned(Expr::Literal(literal), span));
+                .map_with(|literal, span| Spanned(Expr::Literal(literal), span.span()));
             let ident =
-                IdentAst::parser().map_with(|ident, span| Spanned(Expr::Ident(ident), span));
+                IdentAst::parser().map_with(|ident, span| Spanned(Expr::Ident(ident), span.span()));
             let atom = literal
                 .or(ident)
                 .or(expr.delimited_by(just(Token::ParenOpen), just(Token::ParenClose)))
                 .boxed();
             let unary = UnaryOperator::parser()
                 .repeated()
+                .collect::<Vec<Spanned<UnaryOperator>>>()
                 .then(atom)
                 .foldr(unary_foldr);
             let bin_parsers = [
@@ -188,13 +179,14 @@ impl Expr {
         })
     }
 }
-*/
+
 impl Let {
     pub fn parser<'a, I>(
-        expr: impl chumsky::Parser<Token<'a>, Spanned<Expr>, Error = Simple<Token<'a>>>,
+        expr: impl Parser<'a, I, Spanned<Expr>, extra::Err<Rich<'a, Token<'a>>>> + Clone + 'a,
     ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
-        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>, {
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
         just(Token::Let)
             .ignore_then(LetName::parser())
             .then(just(Token::MutableKeyword).or_not())
@@ -210,13 +202,13 @@ impl Let {
                 assign_type: assign_op,
                 rhs,
             })
-            .map_with(|stmt, span| Spanned(stmt, span))
+            .map_with(|stmt, span| Spanned(stmt, span.span()))
             .labelled("Let")
     }
 }
 
 impl IdentAst {
-    pub fn parser<'a, I>() ->impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -237,25 +229,29 @@ impl Kind {
             .or(Kind::optional_parser())
             .or(Kind::list_parser())
             .or(Kind::basic_parser())
-            .map_with(|span, tok| span)
+            .map_with(|span, tok| Spanned(span.0, tok.span()))
             .labelled("Kind::main_parser")
     }
-    pub fn basic_parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn basic_parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
-        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>, {
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
         select! {
             Token::Type("Str") => Kind::Str,
             Token::Type("Int") => Kind::Int,
             Token::Type("Float") => Kind::Float,
             Token::Type("Bool") => Kind::Bool,
             Token::Type("NoneType") => Kind::NoneType,
-        }.map_with(|span, tok| Spanned(span, tok.span()))
+        }
+        .map_with(|span, tok| Spanned(span, tok.span()))
         .labelled("Kind::basic_parser")
     }
 
     pub fn list_parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
-        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>, {
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
         Kind::basic_parser()
             .then(
                 SeparateNumberParserBecauseIdkWhy::parser()
@@ -266,43 +262,49 @@ impl Kind {
             .foldl(|a, b| Kind::List {
                 kind: Box::new(a),
                 size: b,
-            }).map_with(|span, tok| Spanned(span, tok.span()))
+            })
+            .map_with(|span, tok| Spanned(span, tok.span()))
             .labelled("Kind::list_parser")
     }
-    pub fn union_parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn union_parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
-        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>, {
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
         Kind::optional_parser()
             .or(Kind::list_parser())
             .or(Kind::basic_parser())
             .separated_by(just(Token::Union))
             .at_least(2)
             .map_with(|kinds, tok| {
-
-                Kind::Union(kinds.clone().iter().map(|kind| kind.clone()).collect())
-
+                Spanned(
+                    Kind::Union(kinds.clone().iter().map(|kind| kind.clone()).collect()),
+                    tok.span(),
+                )
             })
             .labelled("Kind::unions_parser")
     }
 
-    pub fn optional_parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn optional_parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
         Kind::list_parser()
             .or(Kind::basic_parser())
             .then_ignore(just(Token::Optional))
-            .map(|kind| Kind::Optional(Box::new(kind)))
+            .map_with(|kind, tok| Spanned(Kind::Optional(Box::new(kind)), tok.span()))
             .labelled("Kind::optional_parser")
     }
 }
 
 impl Statement {
     pub fn parser<'a, I>(
-        /*expr: impl chumsky::Parser<Token<'a>, Spanned<Expr>, Error = Simple<Token<'a>>> + Clone + 'a,*/
+        expr: impl Parser<'a, I, Spanned<Expr>, extra::Err<Rich<'a, Token<'a>>>> + Clone + 'a,
     ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where
-        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>, {
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
         recursive(|stmt| {
             /*ReAss::parser()
             .map(Statement::ReAssignment)
@@ -506,7 +508,11 @@ impl LetName {
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
-        just(Token::Ident).to(LetName).map_with(|span, tok| Spanned(span, tok.span()))
+        select! {
+         Token::Ident(i) => LetName {name: i.to_string()}
+        }
+        .map_with(|span, ident| Spanned(span, ident.span()))
+        .labelled("IdentAst")
     }
 }
 
@@ -628,20 +634,26 @@ impl ReAss {
             })
     }
 }
-
+*/
 impl SeparateNumberParserBecauseIdkWhy {
-    pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>>
+    pub fn parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    where
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
         select! {
             Token::Integer(i) => SeparateNumberParserBecauseIdkWhy(i64::from_str(i).unwrap())
         }
-        .map_with(|span, tok| Spanned(span, tok))
+        .map_with(|span, tok| Spanned(span, tok.span()))
     }
 }
+
 impl ArrayIndex {
-    pub fn parser<'a>(
-        expr: impl chumsky::Parser<Token<'a>, Spanned<Expr>, Error = Simple<Token<'a>>> + Clone,
-    ) -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>> {
+    pub fn parser<'a, I>(
+        expr: impl Parser<'a, I, Spanned<Expr>, extra::Err<Rich<'a, Token<'a>>>> + Clone + 'a,
+    ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    where
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
         IdentAst::parser()
             .then(expr.delimited_by(just(Token::BracketOpen), just(Token::BracketClose)))
             .map_with(|span, index| {
@@ -650,13 +662,13 @@ impl ArrayIndex {
                         index: Box::new(span.1),
                         arr_name: span.0,
                     },
-                    index,
+                    index.span(),
                 )
             })
             .labelled("ArrayIndex")
     }
 }
-
+/*
 impl StuffThatCanGoIntoReassignment {
     pub fn parser<'a>() -> impl chumsky::Parser<Token<'a>, Spanned<Self>, Error = Simple<Token<'a>>>
     {

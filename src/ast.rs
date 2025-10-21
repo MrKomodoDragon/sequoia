@@ -53,11 +53,11 @@ pub enum Kind {
     Bool,
     NoneType,
     List {
-        kind: Box<Kind>,
+        kind: Box<Spanned<Kind>>,
         size: Option<Spanned<SeparateNumberParserBecauseIdkWhy>>,
     },
-    Union(Vec<Kind>),
-    Optional(Box<Kind>),
+    Union(Vec<Spanned<Kind>>),
+    Optional(Box<Spanned<Kind>>),
 }
 #[derive(Clone, Debug)]
 pub enum BinaryOperator {
