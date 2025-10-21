@@ -142,9 +142,7 @@ impl Expr {
                 .boxed();
             let unary = UnaryOperator::parser()
                 .repeated()
-                .collect::<Vec<Spanned<UnaryOperator>>>()
-                .then(atom)
-                .foldr(unary_foldr);
+                .foldr(atom, unary_foldr);
             let bin_parsers = [
                 BinaryOperator::mul_parser_or_modulo().boxed(),
                 BinaryOperator::add_parser().boxed(),
@@ -153,8 +151,7 @@ impl Expr {
             let mut binary = unary.boxed();
             binary = binary
                 .clone()
-                .then(ComparisonOperators::parser().then(binary).repeated())
-                .foldl(|left, (op, right)| {
+                .foldl(ComparisonOperators::parser().then(binary).repeated(), |left: Spanned<Expr>, (op, right)| {
                     let span = (left.1.start)..(right.1.end);
                     Spanned(
                         Expr::ComparisonOperators(Box::new(left), op, Box::new(right)),
@@ -165,12 +162,11 @@ impl Expr {
             for parser in bin_parsers {
                 binary = binary
                     .clone()
-                    .then(parser.then(binary).repeated())
-                    .foldl(|left, (op, right)| {
+                    .foldl(parser.then(binary).repeated(), |left, (op, right)| {
                         let span = (left.1.start)..(right.1.end);
                         Spanned(
                             Expr::BinaryOperator(Box::new(left), op, Box::new(right)),
-                            span,
+                            span.into(),
                         )
                     })
                     .boxed();
@@ -253,17 +249,21 @@ impl Kind {
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
         Kind::basic_parser()
-            .then(
+            .foldl(
                 SeparateNumberParserBecauseIdkWhy::parser()
                     .or_not()
                     .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
-                    .repeated(),
-            )
-            .foldl(|a, b| Kind::List {
+                    .repeated(), |a, b|{ 
+
+                        let span = match b.clone() {
+                            Some(a) => (a.1.start)..(a.1.end+3),
+                            None => (a.1.start)..(a.1.end+2)
+                        };
+                        Spanned(Kind::List {
                 kind: Box::new(a),
                 size: b,
-            })
-            .map_with(|span, tok| Spanned(span, tok.span()))
+            }, SimpleSpan::from(span))})
+            .map_with(|span, tok| Spanned(span.0, tok.span()))
             .labelled("Kind::list_parser")
     }
     pub fn union_parser<'a, I>()
@@ -275,8 +275,7 @@ impl Kind {
             .or(Kind::list_parser())
             .or(Kind::basic_parser())
             .separated_by(just(Token::Union))
-            .at_least(2)
-            .map_with(|kinds, tok| {
+            .at_least(2).collect::<Vec<Spanned<Kind>>>().map_with(|kinds, tok| {
                 Spanned(
                     Kind::Union(kinds.clone().iter().map(|kind| kind.clone()).collect()),
                     tok.span(),
@@ -331,7 +330,7 @@ impl Root {
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
         Statement::parser(Expr::parser())
-            .repeated()
+            .repeated().collect::<Vec<Spanned<Statement>>>()
             .then_ignore(end())
             .map(|stmts| Root { statements: stmts })
             .map_with(|span, tok| Spanned(span, tok.span()))
