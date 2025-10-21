@@ -1,5 +1,7 @@
 use logos::Logos;
 #[derive(Logos, Debug, PartialEq, Clone, Eq, Hash)]
+#[logos(skip r"//.*")]
+#[logos(skip r"[ \t\n\f]+")]
 pub enum Token<'a> {
     // Conditionals
     #[token("&&")]
@@ -161,8 +163,5 @@ pub enum Token<'a> {
     #[token("NoneType")]
     Type(&'a str),
 
-    #[error]
-    #[regex(r"//.*", logos::skip)]
-    #[regex(r"[ \t\n\f]+", logos::skip)]
     Error,
 }

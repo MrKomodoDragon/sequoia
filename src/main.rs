@@ -6,6 +6,7 @@ use crate::interpreter::interpret;
 use crate::interpreter::lower_type;
 use crate::lexer::Token;
 use crate::parser::parse;
+use chumsky::span::SimpleSpan;
 use logos::Logos;
 use std::time::{Duration, Instant};
 mod ast;
@@ -16,20 +17,24 @@ fn main() {
     let str = String::from(
         r#" let x: Int = 5*(2+1);
             let y: Int = 5+4*2/2;
-            let z: Int[] = [9,9,9,9,9,9];
+            let z: Float[] = [9,9,9,9,9,9];
     "#,
     );
     let now = Instant::now();
-    let lex: Vec<_> = Token::lexer(&str).spanned().collect();
+    let lex = Token::lexer(&str).spanned().map(|(tok, span)| match tok {
+        Ok(t) => (t, SimpleSpan::from(span)),
+        Err(()) => (Token::Error, span.into()),
+    }).collect();
     println!("Ran lexer succesfully");
-    println!("{:#?}", lex);
+    //println!("{:#?}", lex);
     let ast_ = parse(lex);
-    println!("{:#?}", ast_.as_ref().unwrap());
-    println!(
+    //println!("{:#?}", ast_.as_ref().unwrap());
+    /*println!(
         "{:#?}",
         lower_type(Expr::Literal(Spanned(Literal::Integer(9), 0..7)))
-    );
-    interpret(ast_.unwrap().0);
+    );*/
+    //interpret(ast_.unwrap().0);
     let later = Instant::now() - now;
     //println!("{:#?}", later);
+    //print!("Currently In Progress")
 }

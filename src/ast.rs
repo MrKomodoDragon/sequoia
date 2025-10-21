@@ -1,6 +1,7 @@
 use std::ops::Range;
+use chumsky::span::SimpleSpan;
 #[derive(Debug, Clone)]
-pub struct Spanned<T>(pub T, pub Range<usize>);
+pub struct Spanned<T>(pub T, pub SimpleSpan);
 #[derive(Debug, Clone)]
 pub struct IdentAst {
     pub name: String,
