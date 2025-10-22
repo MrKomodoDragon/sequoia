@@ -140,9 +140,7 @@ impl Expr {
                 .or(ident)
                 .or(expr.delimited_by(just(Token::ParenOpen), just(Token::ParenClose)))
                 .boxed();
-            let unary = UnaryOperator::parser()
-                .repeated()
-                .foldr(atom, unary_foldr);
+            let unary = UnaryOperator::parser().repeated().foldr(atom, unary_foldr);
             let bin_parsers = [
                 BinaryOperator::mul_parser_or_modulo().boxed(),
                 BinaryOperator::add_parser().boxed(),
@@ -151,13 +149,16 @@ impl Expr {
             let mut binary = unary.boxed();
             binary = binary
                 .clone()
-                .foldl(ComparisonOperators::parser().then(binary).repeated(), |left: Spanned<Expr>, (op, right)| {
-                    let span = (left.1.start)..(right.1.end);
-                    Spanned(
-                        Expr::ComparisonOperators(Box::new(left), op, Box::new(right)),
-                        span.into(),
-                    )
-                })
+                .foldl(
+                    ComparisonOperators::parser().then(binary).repeated(),
+                    |left: Spanned<Expr>, (op, right)| {
+                        let span = (left.1.start)..(right.1.end);
+                        Spanned(
+                            Expr::ComparisonOperators(Box::new(left), op, Box::new(right)),
+                            span.into(),
+                        )
+                    },
+                )
                 .boxed();
             for parser in bin_parsers {
                 binary = binary
@@ -179,7 +180,7 @@ impl Expr {
 impl Let {
     pub fn parser<'a, I>(
         expr: impl Parser<'a, I, Spanned<Expr>, extra::Err<Rich<'a, Token<'a>>>> + Clone + 'a,
-    ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    ) -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -217,7 +218,8 @@ impl IdentAst {
 }
 
 impl Kind {
-    pub fn parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -229,7 +231,7 @@ impl Kind {
             .labelled("Kind::main_parser")
     }
     pub fn basic_parser<'a, I>()
-    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -244,7 +246,8 @@ impl Kind {
         .labelled("Kind::basic_parser")
     }
 
-    pub fn list_parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn list_parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -253,21 +256,26 @@ impl Kind {
                 SeparateNumberParserBecauseIdkWhy::parser()
                     .or_not()
                     .delimited_by(just(Token::BracketOpen), just(Token::BracketClose))
-                    .repeated(), |a, b|{ 
-
-                        let span = match b.clone() {
-                            Some(a) => (a.1.start)..(a.1.end+3),
-                            None => (a.1.start)..(a.1.end+2)
-                        };
-                        Spanned(Kind::List {
-                kind: Box::new(a),
-                size: b,
-            }, SimpleSpan::from(span))})
+                    .repeated(),
+                |a, b| {
+                    let span = match b.clone() {
+                        Some(a) => (a.1.start)..(a.1.end + 3),
+                        None => (a.1.start)..(a.1.end + 2),
+                    };
+                    Spanned(
+                        Kind::List {
+                            kind: Box::new(a),
+                            size: b,
+                        },
+                        SimpleSpan::from(span),
+                    )
+                },
+            )
             .map_with(|span, tok| Spanned(span.0, tok.span()))
             .labelled("Kind::list_parser")
     }
     pub fn union_parser<'a, I>()
-    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -275,7 +283,9 @@ impl Kind {
             .or(Kind::list_parser())
             .or(Kind::basic_parser())
             .separated_by(just(Token::Union))
-            .at_least(2).collect::<Vec<Spanned<Kind>>>().map_with(|kinds, tok| {
+            .at_least(2)
+            .collect::<Vec<Spanned<Kind>>>()
+            .map_with(|kinds, tok| {
                 Spanned(
                     Kind::Union(kinds.clone().iter().map(|kind| kind.clone()).collect()),
                     tok.span(),
@@ -285,7 +295,7 @@ impl Kind {
     }
 
     pub fn optional_parser<'a, I>()
-    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -330,7 +340,8 @@ impl Root {
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
         Statement::parser(Expr::parser())
-            .repeated().collect::<Vec<Spanned<Statement>>>()
+            .repeated()
+            .collect::<Vec<Spanned<Statement>>>()
             .then_ignore(end())
             .map(|stmts| Root { statements: stmts })
             .map_with(|span, tok| Spanned(span, tok.span()))
@@ -503,7 +514,8 @@ impl Kwarg {
 }
 */
 impl LetName {
-    pub fn parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -511,12 +523,13 @@ impl LetName {
          Token::Ident(i) => LetName {name: i.to_string()}
         }
         .map_with(|span, ident| Spanned(span, ident.span()))
-        .labelled("IdentAst")
+        .labelled("LetName")
     }
 }
 
 impl AssignOp {
-    pub fn parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {
@@ -635,7 +648,8 @@ impl ReAss {
 }
 */
 impl SeparateNumberParserBecauseIdkWhy {
-    pub fn parser<'a, I>() -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    pub fn parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>> + Clone
     where
         I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
     {

@@ -6,6 +6,7 @@ use crate::interpreter::interpret;
 use crate::interpreter::lower_type;
 use crate::lexer::Token;
 use crate::parser::parse;
+use ariadne::{Color, Label, Report, ReportKind, Source};
 use chumsky::span::SimpleSpan;
 use logos::Logos;
 use std::time::{Duration, Instant};
@@ -21,13 +22,27 @@ fn main() {
     "#,
     );
     let now = Instant::now();
-    let lex = Token::lexer(&str).spanned().map(|(tok, span)| match tok {
-        Ok(t) => (t, SimpleSpan::from(span)),
-        Err(()) => (Token::Error, span.into()),
-    }).collect();
+    let lex = Token::lexer(&str)
+        .spanned()
+        .map(|(tok, span)| match tok {
+            Ok(t) => (t, SimpleSpan::from(span)),
+            Err(()) => (Token::Error, span.into()),
+        })
+        .collect();
     println!("Ran lexer succesfully");
     //println!("{:#?}", lex);
     let ast_ = parse(lex);
+    match ast_.into_result() {
+        Ok(ast_) => {
+            println!("{:#?}", ast_);
+            interpret(ast_.0);
+        }
+        Err(errs) => {
+            for err in errs {
+                println!("{:#?}", err);
+            }
+        }
+    }
     //println!("{:#?}", ast_.as_ref().unwrap());
     /*println!(
         "{:#?}",
