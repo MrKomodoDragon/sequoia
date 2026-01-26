@@ -16,13 +16,11 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" let x: Int = 5*(2+1);
-            let y: Int = 5+4*2/2;
-            let z: Float[] = [9,9,9,9,9,9];
+        r#" let x: Int = 3**2;
     "#,
     );
-    let now = Instant::now();
-    let lex = Token::lexer(&str)
+    //let now = Instant::now();
+    let lex: Vec<(Token, SimpleSpan)> = Token::lexer(&str)
         .spanned()
         .map(|(tok, span)| match tok {
             Ok(t) => (t, SimpleSpan::from(span)),
@@ -30,8 +28,8 @@ fn main() {
         })
         .collect();
     println!("Ran lexer succesfully");
-    //println!("{:#?}", lex);
-    let ast_ = parse(lex);
+    println!("{:#?}", lex);
+    /*let ast_ = parse(lex);
     match ast_.into_result() {
         Ok(ast_) => {
             println!("{:#?}", ast_);
@@ -51,5 +49,5 @@ fn main() {
     //interpret(ast_.unwrap().0);
     let later = Instant::now() - now;
     //println!("{:#?}", later);
-    //print!("Currently In Progress")
+    //print!("Currently In Progress")*/
 }

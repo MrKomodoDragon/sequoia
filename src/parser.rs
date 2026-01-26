@@ -29,6 +29,15 @@ pub fn parse<'a>(
 // }
 
 impl BinaryOperator {
+    pub fn exponent_parser<'a, I>()
+    -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
+    where
+        I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+    {
+        just(Token::Pow)
+            .to(BinaryOperator::Pow)
+            .map_with(|span, op| Spanned(span, op.span()))
+    }
     pub fn mul_parser_or_modulo<'a, I>()
     -> impl Parser<'a, I, Spanned<Self>, extra::Err<Rich<'a, Token<'a>>>>
     where

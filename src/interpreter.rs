@@ -279,6 +279,7 @@ pub(crate) fn expr_eval(
                     _ => todo!(),
                 }
             }
+            BinaryOperator::Pow => todo!(),
         },
         Expr::UnaryOperator(op, expr) => match op.0 {
             UnaryOperator::Neg => -(expr_eval(*expr, vars_dict)),
@@ -332,5 +333,6 @@ fn literal_eval(
         //index: Box::new(expr_eval(*(i.index))),
         //},
         Literal::None => Value::None,
+        Literal::Exponent(i) => Value::Int(i),
     }
 }

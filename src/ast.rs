@@ -1,6 +1,6 @@
- // let meow: String = "taha";
- 
- use chumsky::span::SimpleSpan;
+// let meow: String = "taha";
+
+use chumsky::span::SimpleSpan;
 #[derive(Debug, Clone)]
 pub struct Spanned<T>(pub T, pub SimpleSpan);
 #[derive(Debug, Clone)]
@@ -16,6 +16,7 @@ pub struct Arg {
     pub name: IdentAst,
     pub kind: Kind,
 }
+
 #[derive(Clone, Debug)]
 pub struct FunctionDecl {
     pub public: bool,
@@ -44,6 +45,7 @@ pub enum Literal {
     Bool(bool),
     ArrrayIndex(Spanned<ArrayIndex>),
     None,
+    Exponent(i64),
 }
 
 #[derive(Debug, Clone)]
@@ -69,6 +71,7 @@ pub enum BinaryOperator {
     Modulus,
     AND,
     OR,
+    Pow,
 }
 #[derive(Clone, Debug)]
 pub enum ComparisonOperators {

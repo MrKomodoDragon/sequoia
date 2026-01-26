@@ -1,4 +1,5 @@
-use logos::Logos;
+use logos::{Lexer, Logos};
+
 #[derive(Logos, Debug, PartialEq, Clone, Eq, Hash)]
 #[logos(skip r"//.*")]
 #[logos(skip r"[ \t\n\f]+")]
@@ -67,6 +68,9 @@ pub enum Token<'a> {
 
     #[token("=")]
     Equal,
+
+    #[token("**")]
+    Pow,
 
     //Parentheses and Brackets
     #[token("(")]
