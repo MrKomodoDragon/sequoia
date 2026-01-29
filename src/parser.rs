@@ -151,6 +151,7 @@ impl Expr {
                 .boxed();
             let unary = UnaryOperator::parser().repeated().foldr(atom, unary_foldr);
             let bin_parsers = [
+                BinaryOperator::exponent_parser().boxed(),
                 BinaryOperator::mul_parser_or_modulo().boxed(),
                 BinaryOperator::add_parser().boxed(),
                 BinaryOperator::and_or_parser().boxed(),

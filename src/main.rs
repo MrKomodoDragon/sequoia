@@ -7,6 +7,7 @@ use crate::interpreter::lower_type;
 use crate::lexer::Token;
 use crate::parser::parse;
 use ariadne::{Color, Label, Report, ReportKind, Source};
+use regex::Regex;
 use chumsky::span::SimpleSpan;
 use logos::Logos;
 use std::time::{Duration, Instant};
@@ -16,10 +17,11 @@ mod lexer;
 mod parser;
 fn main() {
     let str = String::from(
-        r#" let x: Int = 3**2;
+        r#" let x: Int = 3.0**2;
     "#,
     );
     //let now = Instant::now();
+    let regex = Regex::new(r"");
     let lex: Vec<(Token, SimpleSpan)> = Token::lexer(&str)
         .spanned()
         .map(|(tok, span)| match tok {
@@ -29,11 +31,11 @@ fn main() {
         .collect();
     println!("Ran lexer succesfully");
     println!("{:#?}", lex);
-    /*let ast_ = parse(lex);
+    let ast_ = parse(lex);
     match ast_.into_result() {
         Ok(ast_) => {
             println!("{:#?}", ast_);
-            interpret(ast_.0);
+            //interpret(ast_.0);
         }
         Err(errs) => {
             for err in errs {
@@ -47,7 +49,6 @@ fn main() {
         lower_type(Expr::Literal(Spanned(Literal::Integer(9), 0..7)))
     );*/
     //interpret(ast_.unwrap().0);
-    let later = Instant::now() - now;
     //println!("{:#?}", later);
     //print!("Currently In Progress")*/
 }
